@@ -17,14 +17,14 @@ test("no skins for bugs that do not exist", () => {
 
 test("every bot is visually distinct and none of them is Sprocket teal", () => {
   const bodies = Object.values(SKINS).map((s) => s.body);
-  assert.equal(new Set(bodies).size, bodies.length, "two bots share a body colour");
+  assert.equal(new Set(bodies).size, bodies.length, "two bots share a body color");
   assert.ok(!bodies.includes(SPROCKET.body), "teal is reserved for the host");
   const names = Object.values(SKINS).map((s) => s.name);
   assert.equal(new Set(names).size, names.length);
 });
 
-test("bots sharing a glitch tell never also share a colour family", () => {
-  // Two bots may reuse a tell, but then colour has to carry the difference.
+test("bots sharing a glitch tell never also share a color family", () => {
+  // Two bots may reuse a tell, but then color has to carry the difference.
   const byTell = new Map<string, string[]>();
   for (const [id, s] of Object.entries(SKINS)) {
     const key = s.tell.kind === "transform" ? `t:${s.tell.part}` : `${s.tell.kind}:${s.tell.id}`;
@@ -32,7 +32,7 @@ test("bots sharing a glitch tell never also share a colour family", () => {
   }
   for (const [tell, ids] of byTell) {
     const bodies = ids.map((i) => skinFor(i).body);
-    assert.equal(new Set(bodies).size, bodies.length, `${tell} reused without colour separation`);
+    assert.equal(new Set(bodies).size, bodies.length, `${tell} reused without color separation`);
   }
 });
 

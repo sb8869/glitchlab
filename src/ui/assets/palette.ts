@@ -1,7 +1,7 @@
 /**
  * The character system.
  *
- * There is one body skeleton. A character is that skeleton plus two colours,
+ * There is one body skeleton. A character is that skeleton plus two colors,
  * an eye group, a silhouette (head / antenna / feet variant) and at most one
  * glitch tell. Thirteen patient bots therefore cost one drawing and a table.
  *

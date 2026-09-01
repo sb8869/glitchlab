@@ -191,7 +191,7 @@ The engine is stateless; learner state is passed in.
 Final art is produced outside the repo (brief in `design/ASSET-BRIEF.md`) and
 dropped in wholesale, so composition depends on structure that an outside tool
 could easily break. `src/ui/assets/assets.test.ts` encodes that structure:
-shared 240x240 coordinate space, no hard-coded colours (every fill resolves
+shared 240x240 coordinate space, no hard-coded colors (every fill resolves
 through a `--bot-*` token), self-contained flat SVG, the runtime slots shipping
 empty, and every tell and silhouette the palette names actually existing.
 
@@ -296,7 +296,7 @@ Node 22+, native type stripping, no build step. Relative imports end in `.ts`.
   elimination (above). This is a property of the arithmetic, not of the engine,
   but it means those bugs need more items and are the first place accuracy
   drops.
-- The bug library is 13 of the ~100 procedural bugs Brown & Burton catalogued.
+- The bug library is 13 of the ~100 procedural bugs Brown & Burton cataloged.
   Breadth here is cheap to add later and would not change the architecture.
 - Evaluation is against synthetic students generated from the same bug library
   the engine reasons over. It validates the *inference*, not the claim that

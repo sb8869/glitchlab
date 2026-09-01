@@ -33,11 +33,11 @@ test("every asset shares the 240x240 coordinate space", () => {
   }
 });
 
-test("no hard-coded colours: every fill and stroke goes through a token", () => {
+test("no hard-coded colors: every fill and stroke goes through a token", () => {
   // A bare hex breaks the entire fill-swap mechanism, silently and per bot.
   for (const f of FILES) {
     const bare = read(f).match(/(?:fill|stroke)="#[0-9a-fA-F]{3,8}"/g) ?? [];
-    assert.deepEqual(bare, [], `${f} hard-codes a colour`);
+    assert.deepEqual(bare, [], `${f} hard-codes a color`);
   }
 });
 
@@ -129,7 +129,7 @@ test("every character composes cleanly in every expression", () => {
       for (const showTell of [true, false]) {
         const svg = composeBot(src, { character, eyes, showTell });
         assert.equal(svg.includes('<g id="bot-eyes"></g>'), false, `${character} has empty eyes`);
-        assert.ok(svg.includes("--bot-body:"), `${character} lost its colour vars`);
+        assert.ok(svg.includes("--bot-body:"), `${character} lost its color vars`);
         assert.ok(svg.length > 500);
       }
     }
