@@ -25,11 +25,11 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 1. Bug library (13 executable misconceptions) | done, 19 tests |
 | 2. Inference engine (Bayes + information gain) | done, 15 tests |
 | 3. Simulation harness (500 students) | done, result below |
-| 4. Progression and mastery | not started |
+| 4. Progression and mastery | done, 29 tests |
 | 5. Game layer | characters + final art done, screens not started |
 | 6. Remediation layer | not started |
 
-`npm run check` — typecheck plus 48 tests, all green.
+`npm run check` — typecheck plus 77 tests, all green.
 
 ---
 
@@ -127,8 +127,9 @@ engineer in a way that "I prompted a model to guess the misconception" is not.
 ```
 src/bugs/       types, digit/fraction procedures, the 13 bugs, the probe bank
 src/engine/     posterior, likelihood, information gain, session driver
+src/learner/    repair log, delayed interleaved mastery, band ladder, storage
 src/ui/assets/  bot skeleton, eye states, glitch tells, palette, composition
-scripts/        collision report, simulation harness, character contact sheet
+scripts/        collision report, simulation harness, contact sheet, mastery walkthrough
 design/         the Claude Design asset brief
 ```
 
@@ -201,6 +202,46 @@ bot goes dead on screen. Expression is carried by eye shape alone, so
 `no overlay tell draws inside the eye band` is now asserted rather than
 remembered.
 
+### Mastery: why a streak is not enough
+
+Everyone else rewards consecutive correct answers. Three in a row measures
+short-term recall, which a child can produce by holding a procedure in working
+memory for ninety seconds. This measures retention instead.
+
+A bug moves through four states. Reaching a streak earns **probation**, never
+repair — that one line is the whole difference:
+
+```
+unseen -> diagnosed -> probation -> repaired
+              ^                        (permanent)
+              |
+              +-- failed retest: the robot cracks back open
+```
+
+Two sessions after the streak, that bug's discriminating item quietly
+reappears **mixed into new material** — never first, and kept apart from other
+retests, because a probe presented in its own block is announced and the child
+primes the procedure. Pass it and the repair is permanent. Fail it and the
+robot cracks open, the streak is wiped, and the retest clock is cleared.
+
+Three guards exist because without them the rule quietly degrades back into a
+streak counter, and each is pinned by a test:
+
+- streaks reset between sessions, so "three in a row" can only mean one sitting
+- practice on a bug already in probation cannot restart or shortcut its clock
+- the retest item is chosen to be the *least ambiguous* live item for that bug,
+  so a wrong answer pins the blame on that bug and no other
+
+The retest clock survives a page reload, since the mechanic spans sessions and
+therefore has to span `localStorage` too.
+
+`npm run mastery` prints the whole story end to end, including both outcomes.
+
+Progress is a repair log rather than XP: the bar is made of competencies and it
+is finite, so the child can see the end. The band ladder runs place value ->
+addition regrouping -> subtraction regrouping -> fractions as numbers, and a
+rung only opens when every bug in the band below is repaired.
+
 ### The 13 bugs
 
 | id | band | child sees |
@@ -265,6 +306,7 @@ npm run check        # typecheck + 34 tests
 npm run simulate     # the evaluation numbers above
 npm run collisions   # per-item hypothesis fusion report
 npm run cast         # renders every character to out/contact-sheet.html
+npm run mastery      # walks through the delayed interleaved retest
 ```
 
 Node 22+, native type stripping, no build step. Relative imports end in `.ts`.
@@ -273,9 +315,7 @@ Node 22+, native type stripping, no build step. Relative imports end in `.ts`.
 
 ## What is next
 
-1. **Progression and mastery** (`src/learner/`) — repair log, delayed
-   interleaved retesting, band ladder. `localStorage` only.
-2. **Game layer** (`src/ui/`) — screens. The character system is done and the
+1. **Game layer** (`src/ui/`) — screens. The character system is done and the
    final art is in: one 240x240 skeleton, three eye states, seven glitch tells,
    nine silhouette variants and a 13-entry palette table compose the whole cast,
    so a bot is a fill swap rather than a drawing. `npm run cast` renders all
@@ -284,7 +324,7 @@ Node 22+, native type stripping, no build step. Relative imports end in `.ts`.
    suspects to four to one, and the repair moment where the bug is named in
    `childLabel` language. Sprocket never says "you're wrong": wrongness is data
    in this app and the mascot has to behave like it.
-3. **Remediation** — the one place a model belongs. Once the bug is known, it
+2. **Remediation** — the one place a model belongs. Once the bug is known, it
    generates the counterexample that breaks that specific bug in language a
    seven-year-old parses, plus a plain-English parent note. Cheap generations to
    Haiku, explanations to Sonnet, cost per session instrumented and shown on

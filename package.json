@@ -13,7 +13,8 @@
     "collisions": "node --experimental-strip-types scripts/collision-report.ts",
     "simulate": "node --experimental-strip-types scripts/simulate.ts",
     "check": "npm run typecheck && npm test",
-    "cast": "node --experimental-strip-types scripts/contact-sheet.ts"
+    "cast": "node --experimental-strip-types scripts/contact-sheet.ts",
+    "mastery": "node --experimental-strip-types scripts/mastery-walkthrough.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
