@@ -1,9 +1,13 @@
 import { bugById } from "../../bugs/library.ts";
-import { counterexampleFor } from "../../remediation/index.ts";
 import { SKINS } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
 
-export type RetestOutcome = { bugId: string; correct: boolean };
+export type RetestOutcome = {
+  bugId: string;
+  correct: boolean;
+  /** The problem they actually answered, not a stand-in for it. */
+  problem: string;
+};
 
 /**
  * What the delayed retest decided.
@@ -15,9 +19,12 @@ export type RetestOutcome = { bugId: string; correct: boolean };
  */
 export function Outcome({
   results,
+  nextName,
   onContinue,
 }: {
   results: RetestOutcome[];
+  /** The robot the child picked before the warm-up, which is where this goes. */
+  nextName: string | null;
   onContinue: () => void;
 }) {
   const r = results[0];
@@ -25,8 +32,6 @@ export function Outcome({
 
   const skin = SKINS[r.bugId]!;
   const bug = bugById(r.bugId);
-  const ex = counterexampleFor(r.bugId);
-
   return (
     <main className="panel">
       <div className="say">
@@ -72,9 +77,14 @@ export function Outcome({
           </li>
           <li className={r.correct ? "on" : "warn"}>
             <b>Retest · today</b>
+            {/*
+              The problem they were actually given. This used to print the
+              bug's canonical example instead, which is a different problem
+              generated from a different seed — a screen recounting what just
+              happened, quietly showing something that did not.
+            */}
             <span>
-              {ex ? `${ex.problem} · ` : ""}
-              {r.correct ? "you held it" : "the bug is still hiding in there"}
+              {r.problem} · {r.correct ? "you held it" : "the bug is still hiding in there"}
             </span>
           </li>
           <li className={r.correct ? "on" : ""}>
@@ -91,8 +101,10 @@ export function Outcome({
       </p>
 
       <div style={{ display: "flex", justifyContent: "center" }}>
+        {/* Says where it goes. It used to say "Have another look" and go to
+            the bench, which was neither a look nor the robot they picked. */}
         <button className="btn" onClick={onContinue}>
-          {r.correct ? "Back to the bench" : "Have another look"}
+          {nextName ? `On to ${nextName} \u2192` : "Back to the bench"}
         </button>
       </div>
     </main>

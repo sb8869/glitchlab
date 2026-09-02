@@ -5,7 +5,6 @@ import { mulberry32 } from "../engine/session.ts";
 import {
   beginSession,
   currentBand,
-  dueRetests,
   getRecord,
   loadLearner,
   progress,
@@ -15,6 +14,7 @@ import {
   saveLearner,
   type LearnerState,
 } from "../learner/index.ts";
+import { SKINS } from "./assets/palette.ts";
 import { Sprocket } from "./components/Bot.tsx";
 import { buildWarmup, type Warmup as WarmupData } from "./game/warmup.ts";
 import { Bay } from "./screens/Bay.tsx";
@@ -28,8 +28,8 @@ const TOTAL = BUGS.length;
 
 type Screen =
   | { at: "bay" }
-  /** The beat between sessions. `warm` is null when nothing is due back. */
-  | { at: "later"; session: number; warm: WarmupData | null; next: string | null }
+  /** The beat between sessions. */
+  | { at: "later"; session: number; waiting: number }
   | { at: "warmup"; data: WarmupData; next: string }
   | { at: "outcome"; results: RetestOutcome[]; next: string }
   | { at: "case"; bugId: string }
@@ -113,30 +113,18 @@ export function App() {
             const next = beginSession(learner);
             setLearner(next);
             /*
-             * The warm-up leads into the robot the child is about to work on,
-             * never the one being retested — naming the patient would give the
-             * probe away. Fresh problems come from the current rung of the
-             * ladder so they really are new material rather than a replay of
-             * the case that produced the retest.
-             */
-            const upNext = BUGS.find((b) => {
-              const st = getRecord(next, b.id).state;
-              return st === "unseen" || st === "diagnosed";
-            });
-            const warm =
-              dueRetests(next).length > 0 && upNext
-                ? buildWarmup(next, currentBand(next), rng)
-                : null;
-            /*
-             * Always show the gap, even when nothing is due. Closing the lab
-             * and having the screen not change at all is the same bug in the
-             * other direction: time passed and the child could not tell.
+             * Closing up advances the clock and NOTHING ELSE.
+             *
+             * This used to build a warm-up here too, which meant inventing a
+             * robot for it to lead into — the child had not picked one yet, so
+             * it named whichever was first on the bench and then walked them
+             * into that case. A warm-up belongs to a case the child chose. A
+             * due retest surfaces on its own the next time they open one.
              */
             setScreen({
               at: "later",
               session: next.sessionIndex,
-              warm,
-              next: warm ? upNext!.id : null,
+              waiting: BUGS.filter((b) => getRecord(next, b.id).state === "probation").length,
             });
           }}
         />
@@ -145,13 +133,8 @@ export function App() {
       {screen.at === "later" && (
         <Later
           session={screen.session}
-          onContinue={() =>
-            setScreen(
-              screen.warm && screen.next
-                ? { at: "warmup", data: screen.warm, next: screen.next }
-                : { at: "bay" },
-            )
-          }
+          waiting={screen.waiting}
+          onContinue={() => setScreen({ at: "bay" })}
         />
       )}
 
@@ -164,7 +147,16 @@ export function App() {
       )}
 
       {screen.at === "outcome" && (
-        <Outcome results={screen.results} onContinue={() => setScreen({ at: "bay" })} />
+        /*
+         * On to the robot the child actually picked. The retest rode along
+         * inside their warm-up; it was never what they came here to do, and
+         * dropping them back at the bench threw their choice away.
+         */
+        <Outcome
+          results={screen.results}
+          nextName={SKINS[screen.next]?.name ?? null}
+          onContinue={() => setScreen({ at: "case", bugId: screen.next })}
+        />
       )}
 
       {screen.at === "case" && (

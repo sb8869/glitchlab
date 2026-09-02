@@ -21,7 +21,7 @@ export function Warmup({
   data: WarmupData;
   /** Whose case this warm-up leads into — the only robot named on screen. */
   nextBugId: string;
-  onDone: (results: Array<{ bugId: string; correct: boolean }>) => void;
+  onDone: (results: Array<{ bugId: string; correct: boolean; problem: string }>) => void;
 }) {
   const [index, setIndex] = useState(0);
   const [entry, setEntry] = useState("");
@@ -45,6 +45,7 @@ export function Warmup({
       .map(({ slot, answer }) => ({
         bugId: slot.retestFor!,
         correct: answer === slot.answer,
+        problem: itemLabel(slot.item),
       }));
     onDone(results);
   }

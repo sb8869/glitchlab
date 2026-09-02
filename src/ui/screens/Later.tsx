@@ -11,9 +11,12 @@ import { Bot } from "../components/Bot.tsx";
  */
 export function Later({
   session,
+  waiting,
   onContinue,
 }: {
   session: number;
+  /** How many robots are on probation. Never which, and never whether one is due. */
+  waiting: number;
   onContinue: () => void;
 }) {
   return (
@@ -30,8 +33,18 @@ export function Later({
         <span className="gap-stamp">A FEW DAYS LATER</span>
         <div className="gap-no">Session {session}</div>
         <p className="log-sub">
-          Some of the robots on the bench are waiting on a retest. When one comes due, its
-          own problem turns up quietly inside ordinary work — no warning, no label.
+          {waiting > 0 ? (
+            <>
+              {waiting === 1 ? "One robot is" : `${waiting} robots are`} waiting on a retest.
+              When one comes due, its own problem turns up quietly inside ordinary work — no
+              warning, no label.
+            </>
+          ) : (
+            <>
+              Nothing is waiting on a retest yet. Get three in a row on a robot and it goes
+              back on the bench for a couple of sessions before it counts as fixed.
+            </>
+          )}
         </p>
       </div>
 
