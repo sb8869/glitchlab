@@ -43,6 +43,8 @@ export function Case({
   const [phase, setPhase] = useState<Phase>("meet");
   const [childInput, setChildInput] = useState("");
   const [missed, setMissed] = useState(false);
+  /** Their first answer, when it was not the right one. */
+  const [answerMiss, setAnswerMiss] = useState<string | null>(null);
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [practiceEntry, setPracticeEntry] = useState("");
   const [practiceMiss, setPracticeMiss] = useState(false);
@@ -67,13 +69,41 @@ export function Case({
 
   const done = streak >= STREAK_TO_PROBATION;
   const eyes: EyeState =
-    phase === "found" || done ? "celebrating" : missed || practiceMiss ? "thinking" : "idle";
+    phase === "found" || done
+      ? "celebrating"
+      : missed || practiceMiss || answerMiss !== null
+        ? "thinking"
+        : "idle";
 
   function chooseTest(item: Item) {
     setGame(runTest(game, item));
     setChildInput("");
     setMissed(false);
+    setAnswerMiss(null);
     setPhase("answer");
+  }
+
+  /*
+   * Sprocket says you need the right answer to spot what the robot got wrong,
+   * so the case cannot close on an answer the child never produced. A miss
+   * shows them the truth and asks them to write it in; their original answer
+   * is what gets recorded, because that is what they actually knew.
+   */
+  function submitChildAnswer() {
+    if (!last) return;
+    const value = childInput.trim();
+    if (!value) return;
+    const right = value === last.correctAnswer;
+
+    if (!right && answerMiss === null) {
+      setAnswerMiss(value);
+      setChildInput("");
+      return;
+    }
+    if (!right) return; // they still have to write the answer that is on screen
+
+    setGame(recordChildAnswer(game, answerMiss ?? value));
+    setPhase("compare");
   }
   function accuse(id: string) {
     if (id === bugId) {
@@ -112,9 +142,15 @@ export function Case({
             {phase === "answer" && last && (
               <>
                 <div className="line">
-                  {skin.name} says {last.robotAnswer}. What should it really be?
+                  {answerMiss === null
+                    ? `${skin.name} says ${last.robotAnswer}. What should it really be?`
+                    : `Not quite — ${itemLabel(last.item)} is ${last.correctAnswer}.`}
                 </div>
-                <div className="quiet">You need the right answer to spot what it got wrong.</div>
+                <div className="quiet">
+                  {answerMiss === null
+                    ? "You need the right answer to spot what it got wrong."
+                    : "Write it in and we'll carry on. You cannot spot the bug without it."}
+                </div>
               </>
             )}
             {phase === "compare" && last && (
@@ -222,9 +258,22 @@ export function Case({
           </div>
         )}
 
+        {phase === "answer" && answerMiss !== null && last && (
+          <div className="reveal">
+            <span className="chip">You said {answerMiss}</span>
+            <span className="chip win">
+              {itemLabel(last.item)} is {last.correctAnswer}
+            </span>
+          </div>
+        )}
+
         {phase === "answer" && (
           <div className="tray">
-            <span className="tray-head">YOUR TURN · WHAT IS IT REALLY?</span>
+            <span className="tray-head">
+              {answerMiss === null
+                ? "YOUR TURN · WHAT IS IT REALLY?"
+                : "YOUR TURN · WRITE IT IN AND WE'LL CARRY ON"}
+            </span>
             <div className="answer-tray">
               <input
                 autoFocus
@@ -234,21 +283,11 @@ export function Case({
                 aria-label="The correct answer"
                 onChange={(e) => setChildInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && childInput.trim()) {
-                    setGame(recordChildAnswer(game, childInput.trim()));
-                    setPhase("compare");
-                  }
+                  if (e.key === "Enter") submitChildAnswer();
                 }}
               />
-              <button
-                className="btn sm"
-                disabled={!childInput.trim()}
-                onClick={() => {
-                  setGame(recordChildAnswer(game, childInput.trim()));
-                  setPhase("compare");
-                }}
-              >
-                That's it!
+              <button className="btn sm" disabled={!childInput.trim()} onClick={submitChildAnswer}>
+                {answerMiss === null ? "That's it!" : "Write it in"}
               </button>
             </div>
           </div>

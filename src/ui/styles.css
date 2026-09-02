@@ -543,3 +543,29 @@ button:disabled { cursor: not-allowed; }
 }
 .notice b { font-size: 15px; }
 .notice span { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+
+/* ------------------------------------------- the working, column by column */
+.sum {
+  display: grid; justify-items: center; align-items: end;
+  row-gap: 2px; column-gap: 4px; margin: 6px 0 2px;
+  font: 700 30px/1.05 var(--display); font-variant-numeric: tabular-nums;
+}
+.sum .sign { font-size: 26px; color: var(--ink-soft); justify-self: end; padding-right: 2px; }
+.sum .cell { position: relative; padding: 0 2px; }
+.sum .cell .mark {
+  font-size: 13px; font-weight: 700; color: var(--ink-soft); line-height: 1;
+  position: relative; top: -10px;
+}
+.sum .cell .mark.pre { margin-right: 1px; }
+.sum .cell .mark.post { margin-left: 1px; }
+.sum .rule { height: 3px; background: var(--ink); border-radius: 2px; width: 100%; margin: 3px 0 1px; }
+.sum .res { border-radius: 6px; }
+.way.bad .sum .res.hot { background: var(--glitch); color: #fff; }
+.way.ok .sum .res.hot { background: var(--good); color: #fff; }
+.way-note {
+  font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
+  margin-top: 6px; line-height: 1.35;
+}
+.way { padding: 12px 14px; }
+
+.reveal { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
