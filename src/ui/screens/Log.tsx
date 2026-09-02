@@ -28,7 +28,11 @@ export function Log({ learner, onBack }: { learner: LearnerState; onBack: () => 
             <b>{p.repaired}</b> of {p.total}
           </div>
           <p className="log-sub">
-            When all {p.total} slots are full, the bench is clear. That's the whole game.
+            {p.repaired === 0
+              ? `Nothing repaired yet — every slot below is a robot waiting to be worked out. Fill all ${p.total} and the bench is clear. That's the whole game.`
+              : p.repaired === p.total
+                ? "Every slot is full. There is nothing left on the bench."
+                : `When all ${p.total} slots are full, the bench is clear. That's the whole game.`}
           </p>
         </div>
         <button className="btn sm ghost" onClick={onBack}>

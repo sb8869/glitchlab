@@ -246,6 +246,21 @@ button:disabled { cursor: not-allowed; }
 .fracglyph .fg-n, .fracglyph .fg-d { font: 700 28px/1 var(--display); font-variant-numeric: tabular-nums; }
 .fracglyph .fg-bar { display: block; width: 100%; min-width: 34px; height: 3px; background: currentColor; border-radius: 2px; }
 
+/* ------------------------------------------------------------ all clear -- */
+.allclear {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  text-align: center; padding: 22px 20px;
+  background: var(--tint-good); border: var(--stroke) solid var(--good);
+  border-radius: 16px; box-shadow: var(--hard-xs);
+}
+/* Named apart from .stamp, which is absolutely positioned for the pile. */
+.allclear .clear-stamp {
+  font: 700 20px/1 var(--display); letter-spacing: .1em; color: var(--on-good);
+  border: 3px solid var(--good); border-radius: 8px; padding: 8px 16px;
+  transform: rotate(-2deg);
+}
+.allclear .log-sub { max-width: 56ch; }
+
 /* ---------------------------------------------------------------- chips -- */
 .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .chip {

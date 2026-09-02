@@ -33,28 +33,58 @@ export function Bay({
   const probation = by(["probation"]);
   const repaired = by(["repaired"]);
   const due = new Set(dueRetests(learner));
+  /*
+   * The bench is clear when nothing is glitching and nothing is on probation.
+   * That is the end of the game and it has to look like one: an empty
+   * "Glitching · 0" shelf reads as a bug, not as a finish.
+   */
+  const clear = glitching.length === 0 && probation.length === 0 && repaired.length > 0;
 
   return (
     <main className="panel bay">
       <div className="say">
-        <Bot character="sprocket" eyes="idle" showTell={false} size={64} />
+        <Bot character="sprocket" eyes={clear ? "celebrating" : "idle"} showTell={false} size={64} />
         <div className="bubble">
-          <div className="line">Who's on the bench today?</div>
+          <div className="line">
+            {clear ? "The bench is clear." : "Who's on the bench today?"}
+          </div>
           <div className="quiet">
-            {glitching.length} glitching. {probation.length} waiting for a retest.{" "}
-            {repaired.length} done.
+            {clear ? (
+              <>
+                All {repaired.length} of them came back days later and got it right anyway.
+                That is the part that counts.
+              </>
+            ) : (
+              <>
+                {glitching.length} glitching. {probation.length} waiting for a retest.{" "}
+                {repaired.length} done.
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      <Shelf
-        title="Glitching"
-        hint="pick one to open up"
-        tone="bad"
-        ids={glitching}
-        onOpen={onOpen}
-        tell
-      />
+      {clear && (
+        <section className="allclear">
+          <span className="clear-stamp">EVERY ROBOT REPAIRED</span>
+          <p className="log-sub">
+            Not one of them was signed off on a streak. Each one sat on the bench for two
+            sessions first, then had its own problem slipped back into ordinary work — and
+            passed it then.
+          </p>
+        </section>
+      )}
+
+      {glitching.length > 0 && (
+        <Shelf
+          title="Glitching"
+          hint="pick one to open up"
+          tone="bad"
+          ids={glitching}
+          onOpen={onOpen}
+          tell
+        />
+      )}
 
       {probation.length > 0 && (
         <Shelf
@@ -81,9 +111,11 @@ export function Bay({
           exists so the delayed retest can be seen inside a three-minute demo
           without waiting two days for it, and it is labeled as what it is.
         */}
-        <button className="btn sm" onClick={onNextSession}>
-          Come back later →
-        </button>
+        {!clear && (
+          <button className="btn sm" onClick={onNextSession}>
+            Come back later →
+          </button>
+        )}
       </div>
     </main>
   );
