@@ -15,6 +15,7 @@ import { BANK } from "../../bugs/bank.ts";
 import { BUGS, predict } from "../../bugs/library.ts";
 import { correct } from "../../bugs/procedures.ts";
 import type { Band, HypothesisId, Item } from "../../bugs/types.ts";
+import { mulberry32 } from "../../engine/session.ts";
 import {
   CORRECT,
   DEFAULT_CONFIG,
@@ -68,6 +69,12 @@ export type GameState = {
   posterior: Posterior;
   askedIds: string[];
   history: TestResult[];
+  /**
+   * Fixed when the case opens. Test offers are drawn from it, so a single
+   * visit is stable across re-renders and reproducible in tests, while two
+   * visits to the same robot are not the same puzzle twice.
+   */
+  seed: number;
 };
 
 export function suspectCount(posterior: Posterior): number {
@@ -91,7 +98,7 @@ export function bandBank(band: Band): Item[] {
   return BANK.filter((i) => i.band === band);
 }
 
-export function startGame(patientBugId: string): GameState {
+export function startGame(patientBugId: string, seed = Math.floor(Math.random() * 2 ** 31)): GameState {
   const bug = BUGS.find((b) => b.id === patientBugId);
   const band: Band = bug?.band ?? "sub_regroup";
   return {
@@ -100,14 +107,25 @@ export function startGame(patientBugId: string): GameState {
     posterior: initialPosterior(hypothesisSpace(BANK), ROBOT_CONFIG),
     askedIds: [],
     history: [],
+    seed,
   };
 }
 
 /**
- * Three tests to choose between, deliberately of mixed quality: the best
- * available separator, something middling, and one that cannot separate the
- * remaining suspects at all. The child learning to tell them apart IS the
- * numeracy work.
+ * Three tests to choose between, deliberately of mixed quality: one from the
+ * best-scoring tier, one middling, and one that cannot separate the remaining
+ * suspects at all. The child learning to tell them apart IS the numeracy work.
+ *
+ * Within a tier the choice is random, seeded per visit. That matters for two
+ * reasons. Offering the single argmax every time made every playthrough of a
+ * robot identical, which is no fun twice. And the top tier is usually several
+ * items with the SAME expected gain, so picking the first one was an arbitrary
+ * tie-break dressed up as a decision.
+ *
+ * Note what this does not do: it never filters an option out because of what
+ * the robot's actual answer would be. Doing that would use hidden knowledge of
+ * the bug to steer the child's choice, which is the one thing the game is
+ * about not doing.
  */
 export function offerTests(state: GameState, count = 3): Item[] {
   const asked = new Set(state.askedIds);
@@ -118,16 +136,33 @@ export function offerTests(state: GameState, count = 3): Item[] {
 
   if (scored.length <= count) return scored.map((s) => s.item);
 
-  const picks: Item[] = [scored[0]!.item];
-  const worst = scored[scored.length - 1]!;
-  const middle = scored[Math.floor(scored.length / 2)]!;
-  for (const candidate of [middle, worst]) {
-    if (!picks.some((p) => p.id === candidate.item.id)) picks.push(candidate.item);
-  }
-  // Top up if duplicates collapsed the set.
+  const rng = mulberry32(state.seed + state.askedIds.length * 7919);
+  const take = <T,>(pool: T[]): T | null =>
+    pool.length === 0 ? null : (pool[Math.floor(rng() * pool.length)] ?? null);
+
+  const best = scored[0]!.gain;
+  const informative = scored.filter((s) => s.gain > 1e-6);
+  const top = informative.filter((s) => s.gain >= best * 0.95);
+  const middle = informative.filter((s) => s.gain < best * 0.95);
+  const duds = scored.filter((s) => s.gain <= 1e-6);
+
+  const picks: Item[] = [];
+  const push = (s: { item: Item } | null) => {
+    if (s && !picks.some((p) => p.id === s.item.id)) picks.push(s.item);
+  };
+  push(take(top));
+  push(take(middle.length > 0 ? middle : top));
+  push(take(duds.length > 0 ? duds : middle));
+
   for (const s of scored) {
     if (picks.length >= count) break;
-    if (!picks.some((p) => p.id === s.item.id)) picks.push(s.item);
+    push(s);
+  }
+
+  // Shuffle so the strongest test is not always in the same position.
+  for (let i = picks.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [picks[i], picks[j]] = [picks[j]!, picks[i]!];
   }
   return picks.slice(0, count);
 }

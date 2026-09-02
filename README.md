@@ -29,7 +29,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 5. Game layer | full mastery loop playable, 8 screens |
 | 6. Remediation layer | done, 19 tests |
 
-`npm run check` — typecheck plus 100 tests, all green.
+`npm run check` — typecheck plus 106 tests, all green.
 
 ---
 
@@ -256,9 +256,27 @@ The mechanic the whole submission rests on is visible on screen, in two moves,
 without anyone having to explain it.
 
 Three tests are offered each round, deliberately of mixed quality, and they
-are **not labeled**. One of them typically cannot separate the remaining
-suspects at all. Discovering that some questions are worth more than others is
-the numeracy work, so the feedback arrives after the choice, not before.
+are **not labeled**. One of them cannot separate the remaining suspects at all.
+Discovering that some questions are worth more than others is the numeracy
+work, so the feedback arrives after the choice, not before.
+
+Within a quality tier the pick is random, seeded per visit — 18 distinct
+opening hands for the flagship robot, rather than the same three problems
+every time. The top-gain tier is usually several items with *identical*
+expected gain, so always taking the first was an arbitrary tie-break dressed up
+as a decision. A test asserts that the strongest option on the table still
+always reaches the deadlock, so the best frame in the demo does not depend on
+luck.
+
+What the offer logic deliberately does not do is filter an option out because
+of what the robot's actual answer would be. That would use hidden knowledge of
+the bug to steer the child's choice, which is the one thing the game is about
+not doing — even though it would make the demo more predictable.
+
+A test with *lower* expected gain can still resolve the board in one move,
+because gain is an average over answers the robot might give and a narrow
+question sometimes lands on a bucket nobody shares. When that happens Sprocket
+names it rather than letting it pass as an unremarked shortcut.
 
 Diagnosing the robot uses the same engine with honest parameters rather than
 the child's: a machine never slips (`eps` 0.02 against a child's 0.1), and it

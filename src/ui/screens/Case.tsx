@@ -124,11 +124,20 @@ export function Case({
                       : `Let's check that together. ${itemLabel(last.item)} is ${last.correctAnswer}.`}
                 </div>
                 <div className="quiet">
-                  {tied
-                    ? "Two suspects left, and they're tied."
-                    : last.suspectsBefore - last.suspectsAfter > 0
-                      ? `That test ruled out ${last.suspectsBefore - last.suspectsAfter} suspects.`
-                      : "That test didn't rule anything out. Some don't."}
+                  {/*
+                    A test with lower expected gain can still resolve the board
+                    outright, because gain is an average over answers the robot
+                    might give and this one landed on a bucket nobody shares.
+                    Naming that turns a lucky pick into something the child can
+                    learn from instead of an unremarked shortcut.
+                  */}
+                  {last.suspectsAfter === 1 && last.suspectsBefore > 2
+                    ? "That one was sharper than it looked — it split them in one."
+                    : tied
+                      ? "Two suspects left, and they're tied."
+                      : last.suspectsBefore - last.suspectsAfter > 0
+                        ? `That test ruled out ${last.suspectsBefore - last.suspectsAfter} suspects.`
+                        : "That test didn't rule anything out. Some don't."}
                 </div>
               </>
             )}
