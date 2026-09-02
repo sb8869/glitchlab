@@ -12,6 +12,7 @@
  */
 
 import { BANK } from "../../bugs/bank.ts";
+import { controlsForBand } from "../../bugs/controls.ts";
 import { BUGS, predict } from "../../bugs/library.ts";
 import { correct } from "../../bugs/procedures.ts";
 import type { Band, HypothesisId, Item } from "../../bugs/types.ts";
@@ -129,7 +130,13 @@ export function startGame(patientBugId: string, seed = Math.floor(Math.random() 
  */
 export function offerTests(state: GameState, count = 3): Item[] {
   const asked = new Set(state.askedIds);
-  const scored = bandBank(state.band)
+  /*
+   * Controls come from outside the probe bank. The bank holds exactly one
+   * uninformative item per band, so drawing the dud from it alone put the same
+   * problem in 100% of hands — the informative slots varied and the useless one
+   * never did.
+   */
+  const scored = [...bandBank(state.band), ...controlsForBand(state.band)]
     .filter((i) => !asked.has(i.id))
     .map((item) => ({ item, gain: expectedInfoGain(state.posterior, item, ROBOT_CONFIG) }))
     .sort((a, b) => b.gain - a.gain);

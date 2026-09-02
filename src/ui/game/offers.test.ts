@@ -16,8 +16,8 @@ test("the same visit always offers the same tests", () => {
 
 test("different visits are not the same puzzle twice", () => {
   const seen = new Set<string>();
-  for (let seed = 0; seed < 40; seed++) seen.add(openers(seed));
-  assert.ok(seen.size >= 3, `only ${seen.size} distinct opening hands`);
+  for (let seed = 0; seed < 400; seed++) seen.add(openers(seed));
+  assert.ok(seen.size >= 40, `only ${seen.size} distinct opening hands`);
 });
 
 test("every hand still contains a test that cannot separate anything", () => {
@@ -59,4 +59,38 @@ test("three tests are offered while the bank can supply them", () => {
   for (let seed = 0; seed < 20; seed++) {
     assert.equal(offerTests(startGame(RIVET, seed)).length, 3);
   }
+});
+
+test("the dud varies too — no single problem shows up in every hand", () => {
+  // This is the bug ten real playthroughs caught: the informative slots were
+  // varying while the uninformative one appeared in 100% of hands, because the
+  // bank holds exactly one inert item per band.
+  const seen = new Map<string, number>();
+  const N = 600;
+  for (let seed = 0; seed < N; seed++) {
+    const g = startGame(RIVET, seed);
+    for (const item of offerTests(g)) {
+      seen.set(item.id, (seen.get(item.id) ?? 0) + 1);
+    }
+  }
+  const worst = Math.max(...seen.values());
+  assert.ok(
+    worst / N < 0.4,
+    `one item appears in ${((100 * worst) / N).toFixed(0)}% of hands`,
+  );
+});
+
+test("a control can be offered, and running it teaches the intended lesson", () => {
+  // Zero information is the point: the child should be able to spend a turn
+  // on a question that cannot possibly separate anything.
+  const g = startGame(RIVET, 5);
+  const control = offerTests(g).find((i) => i.id.startsWith("ctl-"));
+  if (!control) return; // seed happened to draw the bank's own dud
+  assert.ok(gainOf(g, control) < 1e-6, "a control must carry no information");
+  const after = runTest(g, control);
+  assert.equal(
+    suspectCount(after.posterior),
+    suspectCount(g.posterior),
+    "a control must not change the board",
+  );
 });

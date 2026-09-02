@@ -29,7 +29,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 5. Game layer | full mastery loop playable, 8 screens |
 | 6. Remediation layer | done, 19 tests |
 
-`npm run check` — typecheck plus 106 tests, all green.
+`npm run check` — typecheck plus 112 tests, all green.
 
 ---
 
@@ -260,13 +260,23 @@ are **not labeled**. One of them cannot separate the remaining suspects at all.
 Discovering that some questions are worth more than others is the numeracy
 work, so the feedback arrives after the choice, not before.
 
-Within a quality tier the pick is random, seeded per visit — 18 distinct
+Within a quality tier the pick is random, seeded per visit — 108 distinct
 opening hands for the flagship robot, rather than the same three problems
 every time. The top-gain tier is usually several items with *identical*
 expected gain, so always taking the first was an arbitrary tie-break dressed up
 as a decision. A test asserts that the strongest option on the table still
 always reaches the deadlock, so the best frame in the demo does not depend on
 luck.
+
+The uninformative option is drawn from `src/bugs/controls.ts`, a set of
+problems on which no bug fires, deliberately kept OUT of the probe bank. The
+bank holds exactly one inert item per band, so drawing the dud from it put the
+same problem in 100% of hands even after the informative slots started varying
+— ten real playthroughs caught that. Padding the bank with duds would have
+fixed it too, but random item selection wastes turns on duds, so that would
+have flattered the headline result without the method improving. The evaluation
+bank stays exactly as measured; a test asserts the controls never leak into it,
+and another asserts every control is genuinely inert.
 
 What the offer logic deliberately does not do is filter an option out because
 of what the robot's actual answer would be. That would use hidden knowledge of
