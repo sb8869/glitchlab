@@ -26,7 +26,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 2. Inference engine (Bayes + information gain) | done, 15 tests |
 | 3. Simulation harness (500 students) | done, result below |
 | 4. Progression and mastery | done, 29 tests |
-| 5. Game layer | playable core loop, final art in |
+| 5. Game layer | playable core loop, "Case Files" design system in |
 | 6. Remediation layer | not started |
 
 `npm run check` — typecheck plus 77 tests, all green.
@@ -201,6 +201,30 @@ over the eyes removes the only expressive channel the characters have and the
 bot goes dead on screen. Expression is carried by eye shape alone, so
 `no overlay tell draws inside the eye band` is now asserted rather than
 remembered.
+
+### Look and feel: "Case Files"
+
+The child is a detective and the suspect board is a corkboard. Thick ink
+outlines, hard offset shadows, index cards on pushpins, rubber stamps, twine
+— everything a seven-year-old already knows about finding the culprit.
+Designed in Claude Design against the brief in `design/UI-BRIEF.md`.
+
+Two things in it are load-bearing rather than decorative.
+
+**The board changes density with evidence.** Before any test, nothing is known
+and every suspect is equally likely, so the board is a plain roster with no
+meters — thirteen identical bars would be noise dressed as data. Meters appear
+only once a test has ruled something out.
+
+**The tie hangs two cards from one twine at the same height**, with an `=`
+tag between them, rather than stacking them in a list. Two things at equal
+height read as tied; two things stacked always read faintly as ranked. That
+distinction matters because the deadlock is the clearest evidence the engine
+is reasoning rather than sorting.
+
+The design fit exactly fourteen cards with the last row on the bottom edge, so
+one more bug would have broken it. Above ten suspects the cards tighten
+(`.cards.dense`) and the board keeps slack at any count.
 
 ### The game: mutual diagnosis
 

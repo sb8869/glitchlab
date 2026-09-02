@@ -14,7 +14,7 @@
 import { BANK } from "../../bugs/bank.ts";
 import { BUGS, predict } from "../../bugs/library.ts";
 import { correct } from "../../bugs/procedures.ts";
-import type { Band, Item } from "../../bugs/types.ts";
+import type { Band, HypothesisId, Item } from "../../bugs/types.ts";
 import {
   CORRECT,
   DEFAULT_CONFIG,
@@ -190,3 +190,29 @@ export function isSolved(state: GameState): boolean {
 }
 
 export { CORRECT };
+
+/**
+ * A test that would separate two tied suspects: any item on which they write
+ * different answers. This is what the tie card offers as the next move, and
+ * it is the same discrimination logic the engine selects on, surfaced as a
+ * hint rather than hidden in the scoring.
+ */
+export function splittingTest(
+  state: GameState,
+  a: HypothesisId,
+  b: HypothesisId,
+): Item | null {
+  const asked = new Set(state.askedIds);
+  for (const item of bandBank(state.band)) {
+    if (asked.has(item.id)) continue;
+    if (predict(a, item) !== predict(b, item)) return item;
+  }
+  return null;
+}
+
+/** The live suspects are effectively tied when nothing separates their mass. */
+export function isTied(posterior: Posterior, tolerance = 0.02): boolean {
+  const live = liveSuspects(posterior).filter((s) => s.p >= RULED_OUT);
+  if (live.length !== 2) return false;
+  return Math.abs((live[0]?.p ?? 0) - (live[1]?.p ?? 0)) <= tolerance;
+}
