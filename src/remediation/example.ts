@@ -32,19 +32,25 @@ function toCounterexample(bugId: string, item: Item): Counterexample {
  * few others as possible. If the child can only be shown one problem, it
  * should be that one.
  */
+export function exampleItemFor(bugId: string): Item | null {
+  return generateForBug(bugId, EXAMPLE_SEED, 1)[0] ?? null;
+}
+
 export function counterexampleFor(bugId: string): Counterexample | null {
-  const item = generateForBug(bugId, EXAMPLE_SEED, 1)[0];
+  const item = exampleItemFor(bugId);
   return item ? toCounterexample(bugId, item) : null;
 }
 
 /** A second problem of the same shape, for the child to try themselves. */
-export function practiceFor(bugId: string, exclude: string[] = []): Counterexample | null {
+export function practiceItemFor(bugId: string, exclude: string[] = []): Item | null {
   const skip = new Set(exclude);
-  const bug = bugById(bugId);
-  const item = generateForBug(bugId, PRACTICE_SEED, 8).find((i) => !skip.has(i.id));
-  if (!item) return null;
-  void bug;
-  return toCounterexample(bugId, item);
+  void bugById(bugId); // throws on an unknown id rather than returning null
+  return generateForBug(bugId, PRACTICE_SEED, 8).find((i) => !skip.has(i.id)) ?? null;
+}
+
+export function practiceFor(bugId: string, exclude: string[] = []): Counterexample | null {
+  const item = practiceItemFor(bugId, exclude);
+  return item ? toCounterexample(bugId, item) : null;
 }
 
 /** Every number the generated prose is allowed to mention, for the validator. */

@@ -3,9 +3,10 @@ import { useState } from "react";
 import { SKINS } from "../assets/palette.ts";
 import { bugById } from "../../bugs/library.ts";
 import { remediationFor } from "../../remediation/index.ts";
+import { exampleItemFor, practiceItemFor } from "../../remediation/example.ts";
 import { traceArith, type Trace } from "../../remediation/trace.ts";
+import { AnswerInput, answerReady } from "./AnswerInput.tsx";
 import { BANK } from "../../bugs/bank.ts";
-import { generateForBug } from "../../bugs/generate.ts";
 
 /**
  * The screen that teaches, once the bug is known. Every number shown here was
@@ -78,8 +79,8 @@ export function Remediation({ bugId }: { bugId: string }) {
    * showing only the two answers hides the thing being taught: WHERE the two
    * methods part company. Every digit, borrow and carry here is computed.
    */
-  const exampleItem =
-    generateForBug(bugId, 4242, 1)[0] ?? BANK.find((i) => i.id === r.example.itemId) ?? null;
+  const exampleItem = exampleItemFor(bugId) ?? BANK.find((i) => i.id === r.example.itemId) ?? null;
+  const practiceItem = practiceItemFor(bugId);
   const robotTrace: Trace = exampleItem
     ? traceArith(exampleItem, r.example.robotAnswer, r.example.correctAnswer, false)
     : { kind: "plain" };
@@ -124,29 +125,29 @@ export function Remediation({ bugId }: { bugId: string }) {
         <div className="tray">
           <span className="tray-head">YOUR TURN · NOW YOU TRY</span>
           <div className="answer-tray">
-            <span className="practice">{r.practice.problem} =</span>
-            <input
-              inputMode="numeric"
-              placeholder="?"
-              aria-label="Your answer"
+            <span className="practice">
+              {r.practice.problem}
+              {practiceItem?.kind === "fracCompare" ? " — which is bigger?" : " ="}
+            </span>
+            <AnswerInput
+              item={practiceItem}
               value={tryAnswer}
-              onChange={(e) => {
-                setTryAnswer(e.target.value);
+              label="Your answer"
+              onChange={(next) => {
+                setTryAnswer(next);
                 setTried(null);
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && tryAnswer.trim()) {
-                  setTried(tryAnswer.trim() === r.practice!.correctAnswer);
-                }
-              }}
+              onSubmit={(value) => setTried(value.trim() === r.practice!.correctAnswer)}
             />
-            <button
-              className="btn sm"
-              disabled={!tryAnswer.trim()}
-              onClick={() => setTried(tryAnswer.trim() === r.practice!.correctAnswer)}
-            >
-              Check
-            </button>
+            {practiceItem?.kind !== "fracCompare" && (
+              <button
+                className="btn sm"
+                disabled={!answerReady(practiceItem, tryAnswer)}
+                onClick={() => setTried(tryAnswer.trim() === r.practice!.correctAnswer)}
+              >
+                Check
+              </button>
+            )}
             {tried !== null && (
               <span className={`chip ${tried ? "win" : ""}`}>
                 {/* Never a scold: a miss is a nudge back to the counterexample. */}

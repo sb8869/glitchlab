@@ -2,6 +2,12 @@ import { useMemo, useState } from "react";
 
 import { bugById } from "../../bugs/library.ts";
 import { correct, itemLabel } from "../../bugs/procedures.ts";
+import {
+  AnswerInput,
+  answerPrompt,
+  answerReady,
+  answerTrayHead,
+} from "../components/AnswerInput.tsx";
 import type { Item } from "../../bugs/types.ts";
 import { generateForBug } from "../../bugs/generate.ts";
 import { STREAK_TO_PROBATION } from "../../learner/index.ts";
@@ -89,10 +95,10 @@ export function Case({
    * shows them the truth and asks them to write it in; their original answer
    * is what gets recorded, because that is what they actually knew.
    */
-  function submitChildAnswer() {
+  function submitChildAnswer(raw: string = childInput) {
     if (!last) return;
-    const value = childInput.trim();
-    if (!value) return;
+    const value = raw.trim();
+    if (!answerReady(last.item, value)) return;
     const right = value === last.correctAnswer;
 
     if (!right && answerMiss === null) {
@@ -112,9 +118,10 @@ export function Case({
       setPhase("found");
     } else setMissed(true);
   }
-  function submitDrill() {
+  function submitDrill(raw: string = practiceEntry) {
     if (!drill) return;
-    const ok = practiceEntry.trim() === correct(drill);
+    if (!answerReady(drill, raw)) return;
+    const ok = raw.trim() === correct(drill);
     onPractice(bugId, ok);
     setPracticeMiss(!ok);
     setPracticeEntry("");
@@ -143,7 +150,7 @@ export function Case({
               <>
                 <div className="line">
                   {answerMiss === null
-                    ? `${skin.name} says ${last.robotAnswer}. What should it really be?`
+                    ? `${skin.name} says ${last.robotAnswer}. ${answerPrompt(last.item)}`
                     : `Not quite — ${itemLabel(last.item)} is ${last.correctAnswer}.`}
                 </div>
                 <div className="quiet">
@@ -271,24 +278,27 @@ export function Case({
           <div className="tray">
             <span className="tray-head">
               {answerMiss === null
-                ? "YOUR TURN · WHAT IS IT REALLY?"
-                : "YOUR TURN · WRITE IT IN AND WE'LL CARRY ON"}
+                ? `YOUR TURN · ${last ? answerTrayHead(last.item) : "WHAT IS IT REALLY?"}`
+                : "YOUR TURN · PICK THE RIGHT ONE AND WE'LL CARRY ON"}
             </span>
             <div className="answer-tray">
-              <input
+              <AnswerInput
                 autoFocus
-                inputMode="numeric"
+                item={last?.item}
                 value={childInput}
-                placeholder="?"
-                aria-label="The correct answer"
-                onChange={(e) => setChildInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") submitChildAnswer();
-                }}
+                label="The correct answer"
+                onChange={setChildInput}
+                onSubmit={submitChildAnswer}
               />
-              <button className="btn sm" disabled={!childInput.trim()} onClick={submitChildAnswer}>
-                {answerMiss === null ? "That's it!" : "Write it in"}
-              </button>
+              {last?.item.kind !== "fracCompare" && (
+                <button
+                  className="btn sm"
+                  disabled={!answerReady(last?.item, childInput)}
+                  onClick={() => submitChildAnswer()}
+                >
+                  {answerMiss === null ? "That's it!" : "Write it in"}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -359,21 +369,27 @@ export function Case({
                 <div className="tray">
                   <span className="tray-head">YOUR TURN · {STREAK_TO_PROBATION - streak} TO GO</span>
                   <div className="answer-tray">
-                    <span className="practice">{itemLabel(drill)} =</span>
-                    <input
+                    <span className="practice">
+                      {itemLabel(drill)}
+                      {drill.kind === "fracCompare" ? " — which is bigger?" : " ="}
+                    </span>
+                    <AnswerInput
                       autoFocus
-                      inputMode="numeric"
+                      item={drill}
                       value={practiceEntry}
-                      placeholder="?"
-                      aria-label={`Answer for ${itemLabel(drill)}`}
-                      onChange={(e) => setPracticeEntry(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && practiceEntry.trim()) submitDrill();
-                      }}
+                      label={`Answer for ${itemLabel(drill)}`}
+                      onChange={setPracticeEntry}
+                      onSubmit={submitDrill}
                     />
-                    <button className="btn sm" disabled={!practiceEntry.trim()} onClick={submitDrill}>
-                      Check
-                    </button>
+                    {drill.kind !== "fracCompare" && (
+                      <button
+                        className="btn sm"
+                        disabled={!answerReady(drill, practiceEntry)}
+                        onClick={() => submitDrill()}
+                      >
+                        Check
+                      </button>
+                    )}
                   </div>
                 </div>
               )
