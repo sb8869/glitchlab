@@ -200,7 +200,7 @@ export function Case({
                     ? `Not that one — ${skin.name} would have answered differently.`
                     : last.childWasRight
                       ? `Good — so ${skin.name} is off in a very particular way.`
-                      : `Let's check that together. ${answerStatement(last.item, itemLabel(last.item), last.correctAnswer)}.`}
+                      : `You worked that one out. Now look at what ${skin.name} wrote.`}
                 </div>
                 <div className="quiet">
                   {/*
@@ -363,8 +363,14 @@ export function Case({
         {phase === "compare" && last && (
           <>
             <div className="chips">
+              {/*
+                Their first answer is what the engine recorded, but by the time
+                this screen is reached they have written the right one. Leaving
+                "You said 5" up reads as a scold for something they have since
+                fixed, so the chip says what actually happened.
+              */}
               <span className={`chip ${last.childWasRight ? "win" : ""}`}>
-                {last.childWasRight ? "You had it right" : `You said ${last.childAnswer}`}
+                {last.childWasRight ? "You had it right" : "You worked it out"}
               </span>
               <span className="chip">{plural(suspectCount(game.posterior), "suspect")} left</span>
               {tied && <span className="chip warn">2 left, tied</span>}

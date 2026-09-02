@@ -270,6 +270,23 @@ button:disabled { cursor: not-allowed; }
 .fracglyph .fg-n, .fracglyph .fg-d { font: 700 28px/1 var(--display); font-variant-numeric: tabular-nums; }
 .fracglyph .fg-bar { display: block; width: 100%; min-width: 34px; height: 3px; background: currentColor; border-radius: 2px; }
 
+/* ---------------------------------------------------------- between days -- */
+/* Only the gap card and what follows it is centered — the speech bubble is
+   the same left-aligned bubble it is on every other screen. */
+.later .btn, .later > .aside { align-self: center; text-align: center; }
+.gap {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 26px 20px; border-radius: 16px;
+  background: var(--paper); border: var(--stroke) dashed var(--ink-faint);
+}
+.gap-stamp {
+  font: 700 15px/1 var(--display); letter-spacing: .16em; color: var(--ink-soft);
+  border: 2.5px solid var(--ink-faint); border-radius: 7px; padding: 7px 14px;
+  transform: rotate(-2deg);
+}
+.gap-no { font: 700 34px/1 var(--display); color: var(--ink); }
+.gap .log-sub { max-width: 52ch; }
+
 /* ------------------------------------------------------------ all clear -- */
 .allclear {
   display: flex; flex-direction: column; align-items: center; gap: 10px;

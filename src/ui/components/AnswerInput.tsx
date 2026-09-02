@@ -1,8 +1,15 @@
 import type { Frac, Item } from "../../bugs/types.ts";
 import { fracStr } from "../../bugs/procedures.ts";
-import { answerReady } from "./answer.ts";
+import { answerReady, digitsOnly } from "./answer.ts";
 
-export { answerPrompt, answerReady, answerStatement, answerTrayHead, compareChoices } from "./answer.ts";
+export {
+  answerPrompt,
+  answerReady,
+  answerStatement,
+  answerTrayHead,
+  compareChoices,
+  digitsOnly,
+} from "./answer.ts";
 
 /**
  * The answer box, shaped by the item.
@@ -72,7 +79,7 @@ export function AnswerInput({
 
   if (item?.kind === "fracAdd") {
     const [n = "", d = ""] = value.split("/");
-    const set = (nn: string, dd: string) => onChange(`${nn}/${dd}`);
+    const set = (nn: string, dd: string) => onChange(`${digitsOnly(nn)}/${digitsOnly(dd)}`);
     const enter = (e: { key: string }) => {
       if (e.key === "Enter" && answerReady(item, value)) onSubmit(value);
     };
@@ -109,7 +116,7 @@ export function AnswerInput({
       value={value}
       placeholder="?"
       aria-label={label}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange(digitsOnly(e.target.value))}
       onKeyDown={(e) => {
         if (e.key === "Enter" && value.trim()) onSubmit(value);
       }}

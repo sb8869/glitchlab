@@ -1,6 +1,6 @@
 # Glitch Lab
 
-A K-4 math game that diagnoses **which broken procedure** a child is running,
+A K-5 math game that diagnoses **which broken procedure** a child is running,
 instead of lowering the difficulty when they answer wrong.
 
 Children's arithmetic errors are not random. They are consistent buggy
@@ -29,7 +29,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 5. Game layer | full mastery loop playable, 8 screens |
 | 6. Remediation layer | done, 13 tests |
 
-`npm run check` — typecheck plus 117 tests, all green.
+`npm run check` — typecheck plus 128 tests, all green.
 
 ---
 
@@ -440,14 +440,39 @@ item quietly reappears two sessions later, mixed into new material.
 
 ---
 
+## Where this sits in K-5
+
+Every band maps to a specific standard, and the fraction band reaches the top
+of the range:
+
+| band | what it is | standard | grade |
+| --- | --- | --- | --- |
+| Place value | expanded form, three-digit numerals | 2.NBT.A.3 | 2 |
+| Addition regrouping | add within 1000 | 2.NBT.B.7, 3.NBT.A.2 | 2-3 |
+| Subtraction regrouping | subtract within 1000, across zeros | 2.NBT.B.7, 3.NBT.A.2 | 2-3 |
+| Fractions as numbers | compare fractions with unlike denominators | 4.NF.A.2 | 4 |
+| Fractions as numbers | add fractions with unlike denominators | 5.NF.A.1 | 5 |
+
+The bottom of the range is deliberately empty, and the reason is the method
+rather than the schedule. This engine diagnoses **buggy procedures**, and a
+procedure has to have steps before it can have a broken one. Kindergarten and
+first-grade arithmetic is counting, number sense and fluency within twenty —
+real content, but not multi-step written algorithms, so there is nothing for a
+bug library to be a library *of*. The first place a child's arithmetic becomes
+a procedure that can go systematically wrong is regrouping, and that is where
+this starts.
+
+---
+
 ## Scope discipline
 
 No auth, no accounts, no leaderboard, no backend, no server-side persistence.
 Those cost days and prove nothing. Progression is `localStorage`.
 
-Grades 1–4, not all of K–5. Multiplication misconceptions are well documented,
-but a fifth band buys breadth instead of depth, and depth is what the
-subtraction band demonstrates. Stated deliberately rather than silently.
+Four bands spanning grade 2 through grade 5 (see the standards table above),
+not every topic in K-5. Multiplication misconceptions are well documented, but
+a fifth band buys breadth instead of depth, and depth is what the subtraction
+band demonstrates. Stated deliberately rather than silently.
 
 ---
 
@@ -455,7 +480,7 @@ subtraction band demonstrates. Stated deliberately rather than silently.
 
 ```bash
 npm install          # typescript + @types/node, dev only — the engine has zero deps
-npm run check        # typecheck + 117 tests
+npm run check        # typecheck + 128 tests
 npm run simulate     # the evaluation numbers above
 npm run collisions   # per-item hypothesis fusion report
 npm run cast         # renders every character to out/contact-sheet.html

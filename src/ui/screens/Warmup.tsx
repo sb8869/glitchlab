@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { itemLabel } from "../../bugs/procedures.ts";
 import { Bot } from "../components/Bot.tsx";
+import { digitsOnly } from "../components/answer.ts";
 import { SKINS } from "../assets/palette.ts";
 import type { Warmup as WarmupData } from "../game/warmup.ts";
 
@@ -75,7 +76,7 @@ export function Warmup({
                   value={entry}
                   placeholder="?"
                   aria-label={`Answer for ${itemLabel(slot.item)}`}
-                  onChange={(e) => setEntry(e.target.value)}
+                  onChange={(e) => setEntry(digitsOnly(e.target.value))}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") submit();
                   }}

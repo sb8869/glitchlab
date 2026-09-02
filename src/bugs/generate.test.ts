@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { BANK } from "./bank.ts";
 import { BUGS, predict } from "./library.ts";
-import { correct, fracValue, gcd, lcm } from "./procedures.ts";
+import { correct, fracValue, gcd, lcm, numDigits } from "./procedures.ts";
 import { BAND_ORDER, type Band } from "./types.ts";
 import { ambiguity, classify, generateForBug, generatePool } from "./generate.ts";
 
@@ -129,6 +129,41 @@ test("classification agrees with the bug library it is derived from", () => {
       assert.deepEqual(c.live, BUGS.filter((b) => b.applies(item)).map((b) => b.id));
       if (c.role === "control") assert.equal(c.live.length, 0);
       else assert.ok(c.live.length > 0);
+    }
+  }
+});
+
+test("a generated sum never spills into a new place", () => {
+  /*
+   * "56 + 53, and Bolt says 9" is what forgetting the carry does when the
+   * carry is the one out of the leftmost column: it deletes a digit rather
+   * than misplacing one, and the answer reads as nonsense instead of as a
+   * procedure a child can recognize. Every carry in the pool is internal.
+   */
+  for (const band of BAND_ORDER) {
+    for (const seed of [1, 77, 4242, 8686]) {
+      for (const item of generatePool(band, seed, 60).all) {
+        if (item.kind !== "arith" || item.op !== "+") continue;
+        if (band === "place_value") continue; // unequal lengths are the point there
+        assert.equal(
+          numDigits(item.a + item.b),
+          numDigits(Math.max(item.a, item.b)),
+          `${band}/${seed}: ${item.a} + ${item.b} = ${item.a + item.b} gains a place`,
+        );
+      }
+    }
+  }
+});
+
+test("no addition bug is ever shown writing a shorter answer than the truth", () => {
+  for (const bug of BUGS) {
+    for (const item of generateForBug(bug.id, 4242, 30).concat(generateForBug(bug.id, 8686, 30))) {
+      if (item.kind !== "arith" || item.op !== "+") continue;
+      const wrong = predict(bug.id, item);
+      assert.ok(
+        wrong.length >= correct(item).length,
+        `${bug.id}: ${item.a} + ${item.b} -> ${wrong}, shorter than ${correct(item)}`,
+      );
     }
   }
 });

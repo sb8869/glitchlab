@@ -1,9 +1,9 @@
 # Glitch Lab — submission
 
-**A K-4 math game that diagnoses *which* broken procedure a child is running,
+**A K-5 math game that diagnoses *which* broken procedure a child is running,
 instead of deciding they are "bad at subtraction" and giving them easier sums.**
 
-Live link: _(to come)_ · Repo: this one · `npm run check` — typecheck + 125 tests
+Live link: _(to come)_ · Repo: this one · `npm run check` — typecheck + 128 tests
 
 ---
 
@@ -66,6 +66,28 @@ are live they write the identical answer, provably, not accidentally — and are
 separable only by elimination. The game says so on screen rather than pretending
 otherwise.
 
+### Where this sits in K-5
+
+The brief is the K-5 arithmetic strand. Every band maps to a specific standard,
+and the fraction band reaches the top of the range:
+
+| band | what it is | standard | grade |
+| --- | --- | --- | --- |
+| Place value | expanded form, three-digit numerals | 2.NBT.A.3 | 2 |
+| Addition regrouping | add within 1000 | 2.NBT.B.7, 3.NBT.A.2 | 2-3 |
+| Subtraction regrouping | subtract within 1000, across zeros | 2.NBT.B.7, 3.NBT.A.2 | 2-3 |
+| Fractions as numbers | compare fractions with unlike denominators | 4.NF.A.2 | 4 |
+| Fractions as numbers | add fractions with unlike denominators | 5.NF.A.1 | 5 |
+
+The bottom of the range is deliberately empty, and the reason is the method
+rather than the schedule. This engine diagnoses **buggy procedures**, and a
+procedure has to have steps before it can have a broken one. Kindergarten and
+first-grade arithmetic is counting, number sense and fluency within twenty:
+real content, but not multi-step written algorithms, so there is nothing for a
+bug library to be a library *of*. The first place a child's arithmetic becomes
+a procedure that can go systematically wrong is regrouping, and that is where
+this starts.
+
 ## Progression and mastery
 
 Rewarding a streak measures short-term recall. Glitch Lab measures retention:
@@ -121,7 +143,8 @@ itself, because "we wrote it" is not a proof that the arithmetic is right.
 ## Scope
 
 No auth, accounts, leaderboard, backend or server-side persistence. Progress is
-`localStorage`. Grades 1–4. Those cost days and prove nothing.
+`localStorage`. Four bands, grade 2 through grade 5. Those cost days and prove
+nothing.
 
 ---
 

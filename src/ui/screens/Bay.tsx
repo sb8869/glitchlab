@@ -113,7 +113,7 @@ export function Bay({
         */}
         {!clear && (
           <button className="btn sm" onClick={onNextSession}>
-            Come back later →
+            Close up for today →
           </button>
         )}
       </div>

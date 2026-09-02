@@ -18,7 +18,7 @@
  */
 
 import { BUGS, predict } from "./library.ts";
-import { correct, fracValue, gcd, lcm } from "./procedures.ts";
+import { correct, fracValue, gcd, lcm, numDigits } from "./procedures.ts";
 import type { Band, Frac, Item } from "./types.ts";
 
 /* ------------------------------------------------------------ classifying */
@@ -97,17 +97,49 @@ function subtractionCandidate(rng: Rng): Item {
   return sub(h1 * 100 + t1 * 10 + u1, h2 * 100 + t2 * 10 + u2);
 }
 
-function additionCandidate(rng: Rng, band: Band): Item {
+function additionCandidate(rng: Rng, band: Band): Item | null {
   if (band === "place_value") {
     // Unequal lengths are what left-aligning gets wrong.
     return rng() < 0.6
       ? add(between(rng, 12, 89), between(rng, 3, 9), band)
       : add(between(rng, 3, 9), between(rng, 12, 89), band);
   }
-  return add(between(rng, 13, 79), between(rng, 13, 79), band);
+  /*
+   * The sum may not spill into a new place.
+   *
+   * "56 + 53, and Bolt says 9" is technically what forgetting the carry does,
+   * but the carry it forgot was the one out of the LEFTMOST column — there is
+   * no next column for it to be missing from, so the answer just loses a digit
+   * and reads as nonsense rather than as a procedure. Requiring the sum to
+   * keep the same number of places makes every carry an internal one, which is
+   * the thing being taught and the thing a child can see going missing.
+   */
+  for (let tries = 0; tries < 24; tries++) {
+    if (rng() < 0.3) {
+      const a = between(rng, 113, 799);
+      const b = between(rng, 113, 799);
+      if (numDigits(a + b) === 3) return add(a, b, band);
+      continue;
+    }
+    /*
+     * Two-digit sums are built column by column rather than sampled, because
+     * sampling two numbers under 100 and throwing away the ones that spill
+     * leaves a pool that mostly does not carry at all — and a problem with no
+     * carry in it is a problem where the carry bugs cannot show themselves.
+     */
+    const wantCarry = rng() < 0.65;
+    const u1 = between(rng, wantCarry ? 2 : 0, 9);
+    const u2 = wantCarry ? between(rng, 10 - u1, 9) : between(rng, 0, 9 - u1);
+    const carried = u1 + u2 >= 10 ? 1 : 0;
+    const t1 = between(rng, 1, 8);
+    const t2 = between(rng, 1, 9);
+    if (t1 + t2 + carried > 9) continue;
+    return add(t1 * 10 + u1, t2 * 10 + u2, band);
+  }
+  return null;
 }
 
-function placeValueCandidate(rng: Rng): Item {
+function placeValueCandidate(rng: Rng): Item | null {
   /*
    * Same-length addends with no carry: left-aligning them changes nothing and
    * no carry rule has anything to drop, so nothing fires. Without this shape

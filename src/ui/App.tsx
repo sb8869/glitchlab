@@ -19,6 +19,7 @@ import { Sprocket } from "./components/Bot.tsx";
 import { buildWarmup, type Warmup as WarmupData } from "./game/warmup.ts";
 import { Bay } from "./screens/Bay.tsx";
 import { Case } from "./screens/Case.tsx";
+import { Later } from "./screens/Later.tsx";
 import { Log } from "./screens/Log.tsx";
 import { Outcome, type RetestOutcome } from "./screens/Outcome.tsx";
 import { Warmup } from "./screens/Warmup.tsx";
@@ -27,6 +28,8 @@ const TOTAL = BUGS.length;
 
 type Screen =
   | { at: "bay" }
+  /** The beat between sessions. `warm` is null when nothing is due back. */
+  | { at: "later"; session: number; warm: WarmupData | null; next: string | null }
   | { at: "warmup"; data: WarmupData; next: string }
   | { at: "outcome"; results: RetestOutcome[]; next: string }
   | { at: "case"; bugId: string }
@@ -109,7 +112,6 @@ export function App() {
           onNextSession={() => {
             const next = beginSession(learner);
             setLearner(next);
-            if (dueRetests(next).length === 0) return;
             /*
              * The warm-up leads into the robot the child is about to work on,
              * never the one being retested — naming the patient would give the
@@ -121,10 +123,35 @@ export function App() {
               const st = getRecord(next, b.id).state;
               return st === "unseen" || st === "diagnosed";
             });
-            if (!upNext) return;
-            const warm = buildWarmup(next, currentBand(next), rng);
-            if (warm) setScreen({ at: "warmup", data: warm, next: upNext.id });
+            const warm =
+              dueRetests(next).length > 0 && upNext
+                ? buildWarmup(next, currentBand(next), rng)
+                : null;
+            /*
+             * Always show the gap, even when nothing is due. Closing the lab
+             * and having the screen not change at all is the same bug in the
+             * other direction: time passed and the child could not tell.
+             */
+            setScreen({
+              at: "later",
+              session: next.sessionIndex,
+              warm,
+              next: warm ? upNext!.id : null,
+            });
           }}
+        />
+      )}
+
+      {screen.at === "later" && (
+        <Later
+          session={screen.session}
+          onContinue={() =>
+            setScreen(
+              screen.warm && screen.next
+                ? { at: "warmup", data: screen.warm, next: screen.next }
+                : { at: "bay" },
+            )
+          }
         />
       )}
 

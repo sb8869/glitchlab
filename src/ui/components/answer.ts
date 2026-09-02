@@ -14,6 +14,21 @@ export function compareChoices(item: Item): string[] {
   return item.kind === "fracCompare" ? [fracStr(item.a), fracStr(item.b)] : [];
 }
 
+/**
+ * What a child is allowed to type into an answer box: digits, nothing else.
+ *
+ * `inputMode="numeric"` is a keyboard hint, not a restriction — it does not
+ * stop a physical keyboard, a paste, or a phone keyboard that offers letters
+ * anyway. Every answer the engine compares against is digits (a fraction is
+ * entered as two separate boxes and a comparison is a button), so anything
+ * else is a typo the child should never be allowed to submit and puzzle over.
+ */
+const MAX_ANSWER_DIGITS = 8;
+
+export function digitsOnly(raw: string): string {
+  return raw.replace(/\D/g, "").slice(0, MAX_ANSWER_DIGITS);
+}
+
 /** A complete answer for this item — "3/" is not one. */
 export function answerReady(item: Item | null | undefined, value: string): boolean {
   if (!item) return value.trim().length > 0;
