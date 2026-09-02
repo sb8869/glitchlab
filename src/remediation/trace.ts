@@ -183,3 +183,14 @@ export function traceFraction(item: Item, answer: string, annotate: boolean): Tr
       : `make both bottoms ${L}, then the bigger top wins`,
   };
 }
+
+/**
+ * The working for any item, whichever shape it has. One dispatch, because two
+ * screens now show working and they must never disagree about what a
+ * procedure looks like.
+ */
+export function traceFor(item: Item, answer: string, against: string, annotate: boolean): Trace {
+  return item.kind === "fracAdd" || item.kind === "fracCompare"
+    ? traceFraction(item, answer, annotate)
+    : traceArith(item, answer, against, annotate);
+}

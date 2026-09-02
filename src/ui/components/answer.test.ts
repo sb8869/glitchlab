@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { BUGS } from "../../bugs/library.ts";
 import { generateForBug } from "../../bugs/generate.ts";
 import { correct } from "../../bugs/procedures.ts";
-import { answerReady, answerTrayHead, compareChoices } from "./answer.ts";
+import { answerReady, answerStatement, answerTrayHead, compareChoices } from "./answer.ts";
 import type { Item } from "../../bugs/types.ts";
 
 /*
@@ -58,4 +58,12 @@ test("the two choices on a compare item are never the same button twice", () => 
     const [a, b] = compareChoices(item);
     assert.notEqual(a, b, `${item.id}: both choices read ${a}`);
   }
+});
+
+test("a compare item's truth is stated as a choice, not as a value", () => {
+  const cmp = everyItem().find((i) => i.kind === "fracCompare")!;
+  const add = everyItem().find((i) => i.kind === "arith")!;
+  // "3/12 vs 5/8 is 5/8" is not a sentence a seven-year-old should be read.
+  assert.equal(answerStatement(cmp, "3/12 vs 5/8", "5/8"), "5/8 is the bigger one");
+  assert.equal(answerStatement(add, "70 - 53", "17"), "70 - 53 is 17");
 });

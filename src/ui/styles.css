@@ -673,3 +673,10 @@ button:disabled { cursor: not-allowed; }
 .way { padding: 12px 14px; }
 
 .reveal { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+/* The teaching panel shown after a miss: the working, result left blank. */
+.teach { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.teach .way { max-width: 340px; width: 100%; }
+.cell.res.blank, .way-ans.blank, .steps .step.blank {
+  color: var(--ink-faint); font-weight: 800;
+}

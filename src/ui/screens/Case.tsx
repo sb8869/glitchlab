@@ -2,10 +2,13 @@ import { useMemo, useState } from "react";
 
 import { bugById } from "../../bugs/library.ts";
 import { correct, itemLabel } from "../../bugs/procedures.ts";
+import { traceFor } from "../../remediation/trace.ts";
+import { Working } from "../components/Working.tsx";
 import {
   AnswerInput,
   answerPrompt,
   answerReady,
+  answerStatement,
   answerTrayHead,
 } from "../components/AnswerInput.tsx";
 import type { Item } from "../../bugs/types.ts";
@@ -56,9 +59,18 @@ export function Case({
   const [missed, setMissed] = useState(false);
   /** Their first answer, when it was not the right one. */
   const [answerMiss, setAnswerMiss] = useState<string | null>(null);
+  /*
+   * How many times they have missed THIS problem. The first miss is a lesson
+   * — the working, with the result left blank — and only the second one hands
+   * over the answer. Revealing it immediately turns the moment a child is most
+   * ready to be taught into a copying exercise.
+   */
+  const [misses, setMisses] = useState(0);
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [practiceEntry, setPracticeEntry] = useState("");
   const [practiceMiss, setPracticeMiss] = useState(false);
+  /** Misses on the CURRENT drill, so the repair drills teach the same way. */
+  const [drillMisses, setDrillMisses] = useState(0);
 
   const skin = SKINS[bugId]!;
   const bug = bugById(bugId);
@@ -82,7 +94,7 @@ export function Case({
   const eyes: EyeState =
     phase === "found" || done
       ? "celebrating"
-      : missed || practiceMiss || answerMiss !== null
+      : missed || practiceMiss || misses > 0
         ? "thinking"
         : "idle";
 
@@ -91,6 +103,7 @@ export function Case({
     setChildInput("");
     setMissed(false);
     setAnswerMiss(null);
+    setMisses(0);
     setPhase("answer");
   }
 
@@ -106,12 +119,14 @@ export function Case({
     if (!answerReady(last.item, value)) return;
     const right = value === last.correctAnswer;
 
-    if (!right && answerMiss === null) {
-      setAnswerMiss(value);
+    if (!right) {
+      // Their FIRST answer is the one that gets recorded — that is what they
+      // actually knew before being taught anything.
+      if (answerMiss === null) setAnswerMiss(value);
+      setMisses(misses + 1);
       setChildInput("");
       return;
     }
-    if (!right) return; // they still have to write the answer that is on screen
 
     setGame(recordChildAnswer(game, answerMiss ?? value));
     setPhase("compare");
@@ -127,10 +142,19 @@ export function Case({
     if (!drill) return;
     if (!answerReady(drill, raw)) return;
     const ok = raw.trim() === correct(drill);
-    onPractice(bugId, ok);
+    // Only the first attempt at a drill counts toward the streak. After that
+    // they have been shown the working, so getting it right proves nothing
+    // about what they knew — and getting it wrong again should not punish
+    // them twice for one gap.
+    if (drillMisses === 0) onPractice(bugId, ok);
     setPracticeMiss(!ok);
     setPracticeEntry("");
-    if (ok) setPracticeIndex(practiceIndex + 1);
+    if (ok) {
+      setPracticeIndex(practiceIndex + 1);
+      setDrillMisses(0);
+    } else {
+      setDrillMisses(drillMisses + 1);
+    }
   }
 
   return (
@@ -154,14 +178,18 @@ export function Case({
             {phase === "answer" && last && (
               <>
                 <div className="line">
-                  {answerMiss === null
+                  {misses === 0
                     ? `${skin.name} says ${last.robotAnswer}. ${answerPrompt(last.item)}`
-                    : `Not quite — ${itemLabel(last.item)} is ${last.correctAnswer}.`}
+                    : misses === 1
+                      ? "Not quite. Let's do it together."
+                      : `${answerStatement(last.item, itemLabel(last.item), last.correctAnswer)}.`}
                 </div>
                 <div className="quiet">
-                  {answerMiss === null
+                  {misses === 0
                     ? "You need the right answer to spot what it got wrong."
-                    : "Write it in and we'll carry on. You cannot spot the bug without it."}
+                    : misses === 1
+                      ? "Here's how this one goes. Follow it through and tell me what you get."
+                      : "Now you've seen it worked out. Write it in and we'll carry on."}
                 </div>
               </>
             )}
@@ -172,7 +200,7 @@ export function Case({
                     ? `Not that one — ${skin.name} would have answered differently.`
                     : last.childWasRight
                       ? `Good — so ${skin.name} is off in a very particular way.`
-                      : `Let's check that together. ${itemLabel(last.item)} is ${last.correctAnswer}.`}
+                      : `Let's check that together. ${answerStatement(last.item, itemLabel(last.item), last.correctAnswer)}.`}
                 </div>
                 <div className="quiet">
                   {/*
@@ -206,7 +234,9 @@ export function Case({
                   {done
                     ? `${skin.name} is holding together. Good.`
                     : practiceMiss
-                      ? "Close. Take that one slowly."
+                      ? drillMisses > 1
+                        ? "Here it is worked out. Try it once more."
+                        : "Close. Let's do it together."
                       : `Now show ${skin.name} how it's done.`}
                 </div>
                 <div className="quiet">
@@ -270,21 +300,43 @@ export function Case({
           </div>
         )}
 
-        {phase === "answer" && answerMiss !== null && last && (
-          <div className="reveal">
-            <span className="chip">You said {answerMiss}</span>
-            <span className="chip win">
-              {itemLabel(last.item)} is {last.correctAnswer}
-            </span>
+        {/*
+          The teaching moment. A child who has just got this wrong is as ready
+          to be shown the procedure as they will ever be, so the first miss
+          gets the working — every borrow and carry, computed — with the result
+          left blank. The second miss fills the result in, so nobody can be
+          stuck; but by then they have already seen how it is done.
+        */}
+        {phase === "answer" && misses > 0 && last && (
+          <div className="teach">
+            <div className="chips">
+              <span className="chip">You said {answerMiss}</span>
+              {misses > 1 && (
+                <span className="chip win">
+                  {answerStatement(last.item, itemLabel(last.item), last.correctAnswer)}
+                </span>
+              )}
+            </div>
+            <Working
+              tone="ok"
+              cap={misses > 1 ? "How it goes" : "Follow it through"}
+              trace={traceFor(last.item, last.correctAnswer, last.robotAnswer, true)}
+              problem={itemLabel(last.item)}
+              answer={last.correctAnswer}
+              blank={misses === 1}
+              note="work it out one column at a time"
+            />
           </div>
         )}
 
         {phase === "answer" && (
           <div className="tray">
             <span className="tray-head">
-              {answerMiss === null
+              {misses === 0
                 ? `YOUR TURN · ${last ? answerTrayHead(last.item) : "WHAT IS IT REALLY?"}`
-                : "YOUR TURN · PICK THE RIGHT ONE AND WE'LL CARRY ON"}
+                : misses === 1
+                  ? "YOUR TURN · NOW TRY IT AGAIN"
+                  : "YOUR TURN · WRITE IT IN AND WE'LL CARRY ON"}
             </span>
             <div className="answer-tray">
               <AnswerInput
@@ -301,7 +353,7 @@ export function Case({
                   disabled={!answerReady(last?.item, childInput)}
                   onClick={() => submitChildAnswer()}
                 >
-                  {answerMiss === null ? "That's it!" : "Write it in"}
+                  {misses === 0 ? "That's it!" : misses === 1 ? "Try again" : "Write it in"}
                 </button>
               )}
             </div>
@@ -383,6 +435,20 @@ export function Case({
               drill && (
                 <div className="tray">
                   <span className="tray-head">YOUR TURN · {STREAK_TO_PROBATION - streak} TO GO</span>
+                  {/* Same rule as the diagnosis: a miss is taught, not answered. */}
+                  {drillMisses > 0 && (
+                    <div className="teach">
+                      <Working
+                        tone="ok"
+                        cap={drillMisses > 1 ? "How it goes" : "Follow it through"}
+                        trace={traceFor(drill, correct(drill), correct(drill), true)}
+                        problem={itemLabel(drill)}
+                        answer={correct(drill)}
+                        blank={drillMisses === 1}
+                        note="work it out one column at a time"
+                      />
+                    </div>
+                  )}
                   <div className="answer-tray">
                     <span className="practice">
                       {itemLabel(drill)}

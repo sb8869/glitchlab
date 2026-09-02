@@ -4,7 +4,8 @@ import { SKINS } from "../assets/palette.ts";
 import { bugById } from "../../bugs/library.ts";
 import { remediationFor } from "../../remediation/index.ts";
 import { exampleItemFor, practiceItemFor } from "../../remediation/example.ts";
-import { traceArith, traceFraction, type Trace } from "../../remediation/trace.ts";
+import { Working } from "./Working.tsx";
+import { traceFor, type Trace } from "../../remediation/trace.ts";
 import { AnswerInput, answerReady } from "./AnswerInput.tsx";
 import { BANK } from "../../bugs/bank.ts";
 
@@ -13,77 +14,6 @@ import { BANK } from "../../bugs/bank.ts";
  * computed by the engine, and every sentence around those numbers passed the
  * validation gate. Nothing on this screen leaves the device.
  */
-function Working({
-  tone,
-  cap,
-  trace,
-  problem,
-  answer,
-  note,
-}: {
-  tone: "bad" | "ok";
-  cap: string;
-  trace: Trace;
-  problem: string;
-  answer: string;
-  note?: string;
-}) {
-  if (trace.kind === "steps") {
-    return (
-      <div className={`way ${tone}`}>
-        <div className="way-cap">{cap}</div>
-        <ol className="steps">
-          {trace.steps.map((st, i) => (
-            <li className={`step${st.hot ? " hot" : ""}`} key={i}>
-              {st.text}
-            </li>
-          ))}
-        </ol>
-        {(trace.caption ?? note) && <div className="way-note">{trace.caption ?? note}</div>}
-      </div>
-    );
-  }
-
-  if (trace.kind !== "columns") {
-    // Expanded form has neither columns nor steps worth spelling out.
-    return (
-      <div className={`way ${tone}`}>
-        <div className="way-cap">{cap}</div>
-        <div className="way-sum">{problem}</div>
-        <div className="way-ans">{answer}</div>
-        {note && <div className="way-note">{note}</div>}
-      </div>
-    );
-  }
-  const cols = trace.top.length;
-  return (
-    <div className={`way ${tone}`}>
-      <div className="way-cap">{cap}</div>
-      <div className="sum" style={{ gridTemplateColumns: `auto repeat(${cols}, 1fr)` }}>
-        <span className="sign" />
-        {trace.top.map((c, i) => (
-          <span className="cell" key={`t${i}`}>
-            {c.borrowIn && <sup className="mark pre">{c.borrowIn}</sup>}
-            {c.digit}
-            {c.carryIn && <sup className="mark pre">{c.carryIn}</sup>}
-            {c.becomes && <sup className="mark post">{c.becomes}</sup>}
-          </span>
-        ))}
-        <span className="sign">{trace.op === "-" ? "\u2212" : "+"}</span>
-        {trace.bottom.map((c, i) => (
-          <span className="cell" key={`b${i}`}>{c.digit}</span>
-        ))}
-        <span className="rule" style={{ gridColumn: `1 / span ${cols + 1}` }} />
-        <span className="sign" />
-        {trace.result.map((d, i) => (
-          <span className={`cell res${trace.differs[i] ? " hot" : ""}`} key={`r${i}`}>{d}</span>
-        ))}
-      </div>
-      {(trace.caption ?? note) && <div className="way-note">{trace.caption ?? note}</div>}
-    </div>
-  );
-}
-
 export function Remediation({ bugId }: { bugId: string }) {
   const [showParent, setShowParent] = useState(false);
   const [tryAnswer, setTryAnswer] = useState("");
@@ -98,13 +28,8 @@ export function Remediation({ bugId }: { bugId: string }) {
    */
   const exampleItem = exampleItemFor(bugId) ?? BANK.find((i) => i.id === r.example.itemId) ?? null;
   const practiceItem = practiceItemFor(bugId);
-  const isFrac = exampleItem?.kind === "fracAdd" || exampleItem?.kind === "fracCompare";
-  const traceOf = (answer: string, against: string, annotate: boolean): Trace => {
-    if (!exampleItem) return { kind: "plain" };
-    return isFrac
-      ? traceFraction(exampleItem, answer, annotate)
-      : traceArith(exampleItem, answer, against, annotate);
-  };
+  const traceOf = (answer: string, against: string, annotate: boolean): Trace =>
+    exampleItem ? traceFor(exampleItem, answer, against, annotate) : { kind: "plain" };
   const robotTrace = traceOf(r.example.robotAnswer, r.example.correctAnswer, false);
   const correctTrace = traceOf(r.example.correctAnswer, r.example.robotAnswer, true);
 

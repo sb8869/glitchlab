@@ -2,7 +2,7 @@ import type { Frac, Item } from "../../bugs/types.ts";
 import { fracStr } from "../../bugs/procedures.ts";
 import { answerReady } from "./answer.ts";
 
-export { answerPrompt, answerReady, answerTrayHead, compareChoices } from "./answer.ts";
+export { answerPrompt, answerReady, answerStatement, answerTrayHead, compareChoices } from "./answer.ts";
 
 /**
  * The answer box, shaped by the item.
