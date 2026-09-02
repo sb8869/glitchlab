@@ -6,6 +6,7 @@ import type { Item } from "../bugs/types.ts";
 import { loadLearner, progress } from "../learner/index.ts";
 import { Bot, Sprocket } from "./components/Bot.tsx";
 import { SuspectBoard } from "./components/SuspectBoard.tsx";
+import { Remediation } from "./components/Remediation.tsx";
 import { SKINS, type EyeState } from "./assets/palette.ts";
 import {
   canAccuse,
@@ -286,6 +287,7 @@ export function App() {
                 <span className="chip win">Found in {game.history.length} tests</span>
                 <span className="chip warn">Not fixed yet</span>
               </div>
+              <Remediation bugId={game.patientBugId} />
               <p className="aside">
                 Finding the bug is not fixing it. {skin.name} comes back in a couple of sessions
                 with this exact problem mixed into new work. Get it right then and the repair

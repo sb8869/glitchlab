@@ -27,9 +27,9 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 3. Simulation harness (500 students) | done, result below |
 | 4. Progression and mastery | done, 29 tests |
 | 5. Game layer | playable core loop, "Case Files" design system in |
-| 6. Remediation layer | not started |
+| 6. Remediation layer | done, 19 tests |
 
-`npm run check` — typecheck plus 77 tests, all green.
+`npm run check` — typecheck plus 96 tests, all green.
 
 ---
 
@@ -128,6 +128,7 @@ engineer in a way that "I prompted a model to guess the misconception" is not.
 src/bugs/       types, digit/fraction procedures, the 13 bugs, the probe bank
 src/engine/     posterior, likelihood, information gain, session driver
 src/learner/    repair log, delayed interleaved mastery, band ladder, storage
+src/remediation/ counterexample, prompts, the validation gate, cost, fallback
 src/ui/assets/  bot skeleton, eye states, glitch tells, palette, composition
 scripts/        collision report, simulation harness, contact sheet, mastery walkthrough
 design/         the Claude Design asset brief
@@ -307,6 +308,42 @@ is finite, so the child can see the end. The band ladder runs place value ->
 addition regrouping -> subtraction regrouping -> fractions as numbers, and a
 rung only opens when every bug in the band below is repaired.
 
+### Remediation: the only place a model belongs
+
+It runs strictly after diagnosis, so nothing here touches the inference path.
+The division of labor is what makes it safe to put in front of a child:
+
+**Every number is computed; the model only writes the words.** The
+counterexample, the broken procedure's answer and the true answer all come
+from the engine. A model that hallucinates arithmetic can therefore only
+produce prose that contradicts numbers already on file.
+
+**And that contradiction is checked.** `src/remediation/validate.ts` extracts
+every arithmetic assertion from generated text and verifies it before the copy
+is ever written to disk. The subtlety is that this copy is *supposed* to quote
+wrong answers — "Rivet says 71 - 28 is 57" is false as arithmetic and true
+about the robot — so a claim passes when it matches real arithmetic **or** when
+it is exactly what that bug's procedure computes. Anything else is a number
+nobody can account for and it is rejected. The gate also blocks technical ids,
+scolding, model artifacts, and copy too hard for a seven-year-old.
+
+The deterministic fallback is held to the same gate, because a fallback nobody
+checks is just an unvalidated string with a nicer name.
+
+**Generation is offline** (`npm run remediation`), and the result is committed.
+The deployed game needs no API key, no backend and no network at play time, and
+the cost on screen is a measured number rather than an estimate. Routing is by
+task complexity: the child explanation to Sonnet, the parent note to Haiku.
+Prices are per the published pricing page, and a model missing from the table
+reports a null cost rather than a guessed one.
+
+**The prompt contains the bug and three example problems — no name, no answers,
+no history.** The parent note says so on screen, so it is enforced by
+construction and pinned by a test rather than left to good intentions.
+
+Without a key the game runs entirely on the deterministic copy, which is what
+is committed today.
+
 ### The 13 bugs
 
 | id | band | child sees |
@@ -372,6 +409,7 @@ npm run simulate     # the evaluation numbers above
 npm run collisions   # per-item hypothesis fusion report
 npm run cast         # renders every character to out/contact-sheet.html
 npm run mastery      # walks through the delayed interleaved retest
+npm run remediation  # regenerate the model-written copy (needs ANTHROPIC_API_KEY)
 npm run dev          # the game
 npm run build        # production build into dist/
 ```
