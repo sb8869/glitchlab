@@ -2,8 +2,20 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { itemLabel } from "../../bugs/procedures.ts";
+import { BANK } from "../../bugs/bank.ts";
+import { BUGS, predict } from "../../bugs/library.ts";
+import { counterexampleFor, practiceFor } from "../../remediation/index.ts";
 import { generatePool } from "../../bugs/generate.ts";
-import { gainOf, offerTests, runTest, startGame, suspectCount } from "./session.ts";
+import {
+  gainOf,
+  isTied,
+  liveSuspects,
+  offerTests,
+  runTest,
+  splittingTest,
+  startGame,
+  suspectCount,
+} from "./session.ts";
 
 const RIVET = "sub_smaller_from_larger";
 const openers = (seed: number) =>
@@ -132,4 +144,57 @@ test("a control can be offered, and running it teaches the intended lesson", () 
     suspectCount(g.posterior),
     "a control must not change the board",
   );
+});
+
+test("the tie hint always names a test the child is about to be offered", () => {
+  /*
+   * The hint used to be searched out of the fixed bank, so it would say
+   * "try 71 - 28" when 71 - 28 was never going to appear in the tray. A hint
+   * pointing at an unavailable move is worse than no hint.
+   */
+  let checked = 0;
+  for (let seed = 0; seed < 200 && checked < 40; seed++) {
+    let g = startGame(RIVET, seed);
+    const first = offerTests(g).reduce((a, b) => (gainOf(g, a) >= gainOf(g, b) ? a : b));
+    g = runTest(g, first);
+    if (!isTied(g.posterior)) continue;
+
+    const live = liveSuspects(g.posterior).filter((s) => s.p >= 0.02);
+    const hint = splittingTest(g, live[0]!.id, live[1]!.id);
+    assert.ok(hint, `seed ${seed}: tied board offered no way out`);
+
+    const nextOffers = offerTests(g).map((i) => i.id);
+    assert.ok(
+      nextOffers.includes(hint!.id),
+      `seed ${seed}: hinted ${itemLabel(hint!)} but the tray will show ${nextOffers.join(", ")}`,
+    );
+    assert.notEqual(
+      predict(live[0]!.id, hint!),
+      predict(live[1]!.id, hint!),
+      "the hinted test must actually separate them",
+    );
+    checked++;
+  }
+  assert.ok(checked > 20, `only exercised ${checked} tied boards`);
+});
+
+test("nothing the child sees comes out of the fixed evaluation bank", () => {
+  // The bank is the measured benchmark, not a source of gameplay.
+  const bankIds = new Set(BANK.map((i) => i.id));
+  for (let seed = 0; seed < 60; seed++) {
+    let g = startGame(RIVET, seed);
+    for (let round = 0; round < 3; round++) {
+      for (const item of offerTests(g)) {
+        assert.equal(bankIds.has(item.id), false, `bank item ${item.id} was offered`);
+      }
+      const best = offerTests(g).reduce((a, b) => (gainOf(g, a) >= gainOf(g, b) ? a : b));
+      g = runTest(g, best);
+    }
+  }
+  for (const bug of BUGS) {
+    const ex = counterexampleFor(bug.id);
+    assert.ok(ex && !bankIds.has(ex.itemId), `${bug.id} counterexample is a bank item`);
+    const pr = practiceFor(bug.id, ex ? [ex.itemId] : []);
+    assert.ok(!pr || !bankIds.has(pr.itemId), `${bug.id} practice is a bank item`);
+  }
 });

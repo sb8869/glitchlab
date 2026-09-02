@@ -29,7 +29,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 5. Game layer | full mastery loop playable, 8 screens |
 | 6. Remediation layer | done, 19 tests |
 
-`npm run check` — typecheck plus 121 tests, all green.
+`npm run check` — typecheck plus 123 tests, all green.
 
 ---
 

@@ -1,7 +1,7 @@
 import { bugById, predict } from "../../bugs/library.ts";
 import { correct, itemLabel } from "../../bugs/procedures.ts";
 import { CORRECT, type Posterior } from "../../engine/infer.ts";
-import { bestRetestItem } from "../../learner/schedule.ts";
+import { generateForBug } from "../../bugs/generate.ts";
 import { RULED_OUT, isTied, liveSuspects } from "../game/session.ts";
 
 /** Deterministic per-slot tilt, so cards look pinned rather than printed. */
@@ -11,13 +11,17 @@ const TILT = [-1.2, 1, 0.8, -0.9, 1.3, -1.1, 0.6, -1.4, 1.1, -0.7, 0.9, -1.2, 1.
  * What this bug writes when it fires. The signature is what makes the board
  * something a child can reason from: "305 - 128 -> 223" is checkable,
  * "smaller-from-larger" is not.
+ *
+ * Generated, but from a FIXED seed, so a bug's card keeps the same example for
+ * as long as the child is looking at it. It used to come from the probe bank,
+ * which meant the board illustrated bugs with problems the child would never
+ * be offered.
  */
+const SIGNATURE_SEED = 20260902;
+
 function signature(bugId: string): { problem: string; answer: string; ok: boolean } | null {
-  if (bugId === CORRECT) {
-    const item = bestRetestItem("sub_smaller_from_larger");
-    return item ? { problem: itemLabel(item), answer: correct(item), ok: true } : null;
-  }
-  const item = bestRetestItem(bugId);
+  if (bugId === CORRECT) return null;
+  const item = generateForBug(bugId, SIGNATURE_SEED, 1)[0];
   if (!item) return null;
   return { problem: itemLabel(item), answer: predict(bugId, item), ok: false };
 }
@@ -33,6 +37,7 @@ function Card({
   showMeter,
   lead,
   onPick,
+  override,
 }: {
   id: string;
   p: number;
@@ -40,8 +45,10 @@ function Card({
   showMeter: boolean;
   lead?: boolean;
   onPick?: (id: string) => void;
+  /** Force the example shown, so tied cards can prove they agree. */
+  override?: { problem: string; answer: string } | null;
 }) {
-  const sig = signature(id);
+  const sig = override ? { ...override, ok: false } : signature(id);
   const pickable = Boolean(onPick);
   return (
     <div
@@ -81,6 +88,7 @@ export function SuspectBoard({
   onAccuse,
   tieHint,
   tieAnswer,
+  tieProblem,
 }: {
   posterior: Posterior;
   onAccuse?: (bugId: string) => void;
@@ -88,6 +96,8 @@ export function SuspectBoard({
   tieHint?: string | null;
   /** What the robot actually wrote on the test that produced the deadlock. */
   tieAnswer?: string | null;
+  /** The problem that produced the deadlock. */
+  tieProblem?: string | null;
 }) {
   const all = liveSuspects(posterior);
   const live = all.filter((s) => s.p >= RULED_OUT);
@@ -129,6 +139,13 @@ export function SuspectBoard({
                 tilt={i === 0 ? -1 : 1}
                 showMeter
                 onPick={onAccuse}
+                /*
+                 * Both tied cards show the SAME problem — the one just run —
+                 * and the same answer, which is the whole claim being made.
+                 * Showing each suspect's own signature here made two
+                 * indistinguishable bugs look like they do different things.
+                 */
+                override={tieProblem && tieAnswer ? { problem: tieProblem, answer: tieAnswer } : null}
               />
             ))}
           </div>

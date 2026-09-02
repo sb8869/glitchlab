@@ -365,6 +365,7 @@ export function Case({
         onAccuse={phase === "compare" ? accuse : undefined}
         tieHint={tieHint}
         tieAnswer={last?.robotAnswer ?? null}
+        tieProblem={last ? itemLabel(last.item) : null}
       />
     </div>
   );

@@ -235,19 +235,20 @@ export function isSolved(state: GameState): boolean {
 export { CORRECT };
 
 /**
- * A test that would separate two tied suspects: any item on which they write
- * different answers. This is what the tie card offers as the next move, and
- * it is the same discrimination logic the engine selects on, surfaced as a
- * hint rather than hidden in the scoring.
+ * A test that would separate two tied suspects: an item on which they write
+ * different answers.
+ *
+ * It is drawn from the tests the child is ABOUT TO BE OFFERED, not from the
+ * whole space. Naming a problem they cannot pick is worse than saying nothing
+ * — the hint used to come from the fixed bank and would suggest "try 71 - 28"
+ * when 71 - 28 was never going to appear.
  */
 export function splittingTest(
   state: GameState,
   a: HypothesisId,
   b: HypothesisId,
 ): Item | null {
-  const asked = new Set(state.askedIds);
-  for (const item of bandBank(state.band)) {
-    if (asked.has(item.id)) continue;
+  for (const item of offerTests(state)) {
     if (predict(a, item) !== predict(b, item)) return item;
   }
   return null;
