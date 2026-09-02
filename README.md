@@ -26,10 +26,10 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 2. Inference engine (Bayes + information gain) | done, 15 tests |
 | 3. Simulation harness (500 students) | done, result below |
 | 4. Progression and mastery | done, 29 tests |
-| 5. Game layer | playable core loop, "Case Files" design system in |
+| 5. Game layer | full mastery loop playable, 8 screens |
 | 6. Remediation layer | done, 19 tests |
 
-`npm run check` — typecheck plus 96 tests, all green.
+`npm run check` — typecheck plus 100 tests, all green.
 
 ---
 
@@ -267,6 +267,31 @@ bug" (0.06 against a child's 0.5).
 
 Finding the bug is explicitly not fixing it. The repair screen says so, which
 is what sets up the mastery rule below.
+
+### The mastery loop, as the child meets it
+
+The rule below is not just modeled, it is playable end to end:
+
+**bench → case → bug named → practice → probation → (two sessions) → warm-up →
+repaired or cracked**
+
+Nothing on the warm-up screen marks the retest. It is one of four quick
+problems, never first, drawn from the current rung of the ladder so the
+material around it really is new. No marker, no grouping, no styling, no copy —
+a probe the child can see coming is one they can prime for, and priming is
+exactly what this mechanic exists to rule out.
+
+The failing outcome was the screen most at risk of going wrong, so it is worth
+naming what it does not do: no sad face, no red, no grade. Sprocket goes to
+thinking, the answer sits in a neutral slate, and the result is framed as
+information — "that's useful: now we know exactly where to look". A robot that
+cracks back open is a puzzle reopening, not a punishment.
+
+The bench sorts robots by state and the shelf is the whole story: glitching
+robots keep their tell, robots waiting on a retest have lost the tell but are
+not signed off, repaired robots are plain. **Come back later** advances the
+session clock; it exists so the delayed retest can be seen inside a
+three-minute demo rather than two days, and it is labeled as what it is.
 
 ### Mastery: why a streak is not enough
 

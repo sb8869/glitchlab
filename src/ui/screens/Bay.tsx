@@ -1,0 +1,140 @@
+import { BUGS } from "../../bugs/library.ts";
+import { dueRetests, getRecord, type LearnerState } from "../../learner/index.ts";
+import { SKINS } from "../assets/palette.ts";
+import { Bot } from "../components/Bot.tsx";
+
+const BAND_NAME: Record<string, string> = {
+  place_value: "place value",
+  add_regroup: "addition",
+  sub_regroup: "subtraction",
+  fraction_number: "fractions",
+};
+
+/**
+ * The bench. Three shelves, and the shelf a robot sits on is the whole story:
+ * glitching robots keep their tell, robots waiting on a retest have lost the
+ * tell but are not signed off, and repaired robots are plain and checked.
+ */
+export function Bay({
+  learner,
+  onOpen,
+  onNextSession,
+  onLog,
+}: {
+  learner: LearnerState;
+  onOpen: (bugId: string) => void;
+  onNextSession: () => void;
+  onLog: () => void;
+}) {
+  const by = (want: string[]) =>
+    BUGS.filter((b) => want.includes(getRecord(learner, b.id).state)).map((b) => b.id);
+
+  const glitching = by(["unseen", "diagnosed"]);
+  const probation = by(["probation"]);
+  const repaired = by(["repaired"]);
+  const due = new Set(dueRetests(learner));
+
+  return (
+    <main className="panel bay">
+      <div className="say">
+        <Bot character="sprocket" eyes="idle" showTell={false} size={64} />
+        <div className="bubble">
+          <div className="line">Who's on the bench today?</div>
+          <div className="quiet">
+            {glitching.length} glitching. {probation.length} waiting for a retest.{" "}
+            {repaired.length} done.
+          </div>
+        </div>
+      </div>
+
+      <Shelf
+        title="Glitching"
+        hint="pick one to open up"
+        tone="bad"
+        ids={glitching}
+        onOpen={onOpen}
+        tell
+      />
+
+      {probation.length > 0 && (
+        <Shelf
+          title="Waiting on a retest"
+          hint={due.size > 0 ? "one is due now" : "the problem comes back later"}
+          tone="warn"
+          ids={probation}
+          onOpen={onOpen}
+          dashed
+          due={due}
+        />
+      )}
+
+      {repaired.length > 0 && (
+        <Shelf title="Repaired" hint="the retest held" tone="good" ids={repaired} eyes="celebrating" />
+      )}
+
+      <div className="bay-actions">
+        <button className="btn sm ghost" onClick={onLog}>
+          Repair log
+        </button>
+        {/*
+          A session boundary is a real visit in the shipped game. This button
+          exists so the delayed retest can be seen inside a three-minute demo
+          without waiting two days for it, and it is labeled as what it is.
+        */}
+        <button className="btn sm" onClick={onNextSession}>
+          Come back later →
+        </button>
+      </div>
+    </main>
+  );
+}
+
+function Shelf({
+  title,
+  hint,
+  tone,
+  ids,
+  onOpen,
+  tell = false,
+  dashed = false,
+  eyes = "idle",
+  due,
+}: {
+  title: string;
+  hint: string;
+  tone: "bad" | "warn" | "good";
+  ids: string[];
+  onOpen?: (bugId: string) => void;
+  tell?: boolean;
+  dashed?: boolean;
+  eyes?: "idle" | "celebrating";
+  due?: Set<string>;
+}) {
+  return (
+    <section className={`shelf ${tone}${dashed ? " dashed" : ""}`}>
+      <div className="shelf-head">
+        <span className={`shelf-tag ${tone}`}>{title} · {ids.length}</span>
+        <span className="shelf-hint">{hint}</span>
+      </div>
+      <div className="shelf-row">
+        {ids.map((id) => {
+          const skin = SKINS[id]!;
+          const bug = BUGS.find((b) => b.id === id)!;
+          const isDue = due?.has(id) ?? false;
+          return (
+            <button
+              key={id}
+              className={`bot-card${onOpen ? " open" : ""}${isDue ? " due" : ""}`}
+              onClick={onOpen ? () => onOpen(id) : undefined}
+              disabled={!onOpen}
+            >
+              <Bot character={id} eyes={eyes} showTell={tell} size={72} />
+              <span className="bot-name">{skin.name}</span>
+              <span className="bot-band">{isDue ? "retest due" : BAND_NAME[bug.band]}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

@@ -1,88 +1,69 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { bugById } from "../bugs/library.ts";
-import { itemLabel } from "../bugs/procedures.ts";
-import type { Item } from "../bugs/types.ts";
-import { loadLearner, progress } from "../learner/index.ts";
-import { Bot, Sprocket } from "./components/Bot.tsx";
-import { SuspectBoard } from "./components/SuspectBoard.tsx";
-import { Remediation } from "./components/Remediation.tsx";
-import { SKINS, type EyeState } from "./assets/palette.ts";
+import { BUGS } from "../bugs/library.ts";
+import { mulberry32 } from "../engine/session.ts";
 import {
-  canAccuse,
-  isTied,
-  leadingSuspect,
-  liveSuspects,
-  offerTests,
-  recordChildAnswer,
-  runTest,
-  splittingTest,
-  startGame,
-  suspectCount,
-  type GameState,
-} from "./game/session.ts";
+  beginSession,
+  currentBand,
+  dueRetests,
+  getRecord,
+  loadLearner,
+  progress,
+  recordDiagnosis,
+  recordPractice,
+  recordRetest,
+  saveLearner,
+  type LearnerState,
+} from "../learner/index.ts";
+import { Sprocket } from "./components/Bot.tsx";
+import { buildWarmup, type Warmup as WarmupData } from "./game/warmup.ts";
+import { Bay } from "./screens/Bay.tsx";
+import { Case } from "./screens/Case.tsx";
+import { Log } from "./screens/Log.tsx";
+import { Outcome, type RetestOutcome } from "./screens/Outcome.tsx";
+import { Warmup } from "./screens/Warmup.tsx";
 
-/** The flagship case: the bug the whole submission is built around. */
-const PATIENT = "sub_smaller_from_larger";
-const TOTAL = 13;
+const TOTAL = BUGS.length;
 
-type Phase = "meet" | "choose" | "answer" | "compare" | "repaired";
+type Screen =
+  | { at: "bay" }
+  | { at: "warmup"; data: WarmupData; next: string }
+  | { at: "outcome"; results: RetestOutcome[]; next: string }
+  | { at: "case"; bugId: string }
+  | { at: "log" };
 
 export function App() {
-  const [game, setGame] = useState<GameState>(() => startGame(PATIENT));
-  const [phase, setPhase] = useState<Phase>("meet");
-  const [childInput, setChildInput] = useState("");
-  const [missed, setMissed] = useState(false);
+  /*
+   * One learner, persisted on every change. The mastery rule spans sessions,
+   * so the state that carries it has to outlive a page load.
+   */
+  const [learner, setLearnerState] = useState<LearnerState>(() => {
+    const loaded = loadLearner();
+    return loaded.sessionIndex === 0 ? beginSession(loaded) : loaded;
+  });
+  const [saved, setSaved] = useState(true);
+  const [screen, setScreen] = useState<Screen>({ at: "bay" });
 
-  const learner = useMemo(() => loadLearner(), []);
+  const setLearner = useCallback((next: LearnerState) => {
+    setLearnerState(next);
+    setSaved(saveLearner(next));
+  }, []);
+
   const done = progress(learner);
+  const rng = useMemo(() => mulberry32(Date.now() % 100000), []);
 
-  const skin = SKINS[game.patientBugId]!;
-  const bug = bugById(game.patientBugId);
-  const last = game.history[game.history.length - 1] ?? null;
-  const tests = useMemo(() => (phase === "choose" ? offerTests(game) : []), [game, phase]);
-
-  const solved = phase === "repaired";
-  const tied = isTied(game.posterior);
-  const tieHint = useMemo(() => {
-    if (!tied) return null;
-    const live = liveSuspects(game.posterior).filter((s) => s.p >= 0.02);
-    const a = live[0]?.id;
-    const b = live[1]?.id;
-    if (!a || !b) return null;
-    const item = splittingTest(game, a, b);
-    return item ? itemLabel(item) : null;
-  }, [game, tied]);
-
-  const sprocketEyes: EyeState = solved
-    ? "celebrating"
-    : missed || last?.childWasRight === false
-      ? "thinking"
-      : "idle";
-
-  function chooseTest(item: Item) {
-    setGame(runTest(game, item));
-    setChildInput("");
-    setMissed(false);
-    setPhase("answer");
+  function openCase(bugId: string) {
+    // A due retest is served first, hidden inside ordinary warm-up problems
+    // drawn from the current rung rather than from this robot's own band.
+    const warm = buildWarmup(learner, currentBand(learner), rng);
+    setScreen(warm ? { at: "warmup", data: warm, next: bugId } : { at: "case", bugId });
   }
-  function submitAnswer() {
-    setGame(recordChildAnswer(game, childInput.trim()));
-    setPhase("compare");
-  }
-  function accuse(bugId: string) {
-    if (bugId === game.patientBugId) {
-      setMissed(false);
-      setPhase("repaired");
-    } else {
-      setMissed(true);
-    }
-  }
-  function restart() {
-    setGame(startGame(PATIENT));
-    setPhase("meet");
-    setChildInput("");
-    setMissed(false);
+
+  function finishWarmup(results: RetestOutcome[], next: string) {
+    let s = learner;
+    for (const r of results) s = recordRetest(s, r.bugId, r.correct).state;
+    setLearner(s);
+    setScreen(results.length > 0 ? { at: "outcome", results, next } : { at: "case", bugId: next });
   }
 
   return (
@@ -94,244 +75,82 @@ export function App() {
         </div>
         <div className="tally">
           <div className="slots">
-            {Array.from({ length: TOTAL }, (_, i) => (
-              <span key={i} className={`slot${i < done.repaired ? " fixed" : ""}`} />
-            ))}
+            {BUGS.map((b) => {
+              const st = getRecord(learner, b.id).state;
+              return (
+                <span
+                  key={b.id}
+                  className={`slot${st === "repaired" ? " fixed" : st === "probation" ? " prob" : ""}`}
+                />
+              );
+            })}
           </div>
-          <span className="tally-label">
-            {done.repaired} / {TOTAL} fixed
+          <span className={`tally-label${saved ? "" : " warn"}`}>
+            {saved ? `${done.repaired} / ${TOTAL} fixed` : "not saving"}
           </span>
         </div>
       </header>
 
-      <div className="stage">
-        <main className="panel">
-          <Say eyes={sprocketEyes}>
-            {phase === "meet" && (
-              <>
-                <div className="line">This is {skin.name}. Something in there is glitching.</div>
-                <div className="quiet">Your job: work out exactly what it does wrong.</div>
-              </>
-            )}
-            {phase === "choose" && (
-              <>
-                <div className="line">Pick a problem to test {skin.name} with.</div>
-                <div className="quiet">Some tests rule out far more suspects than others.</div>
-              </>
-            )}
-            {phase === "answer" && last && (
-              <>
-                <div className="line">
-                  {skin.name} says {last.robotAnswer}. What should it really be?
-                </div>
-                <div className="quiet">You need the right answer to spot what it got wrong.</div>
-              </>
-            )}
-            {phase === "compare" && last && (
-              <>
-                <div className="line">
-                  {missed
-                    ? `Not that one — ${skin.name} would have answered differently.`
-                    : last.childWasRight
-                      ? `Good — so ${skin.name} is off in a very particular way.`
-                      : `Let's check that one together. ${itemLabel(last.item)} is ${last.correctAnswer}.`}
-                </div>
-                <div className="quiet">
-                  {tied
-                    ? "Two suspects left, and they're tied."
-                    : last.suspectsBefore - last.suspectsAfter > 0
-                      ? `That test ruled out ${last.suspectsBefore - last.suspectsAfter} suspects.`
-                      : "That test didn't rule anything out. Some don't."}
-                </div>
-              </>
-            )}
-            {phase === "repaired" && (
-              <>
-                <div className="line">
-                  Found it. {skin.name} {bug.childLabel.toLowerCase()}.
-                </div>
-                <div className="quiet">Every single time — that is what made it findable.</div>
-              </>
-            )}
-          </Say>
+      {!saved && (
+        <div className="notice">
+          <b>Progress can't be saved on this device right now.</b>
+          <span>
+            You can still play everything. Repairs will be forgotten when this tab closes —
+            usually because the browser is in private mode or storage is full.
+          </span>
+        </div>
+      )}
 
-          {phase !== "repaired" && (
-            <div className="bench-wrap">
-              <div className="spotlight" />
-              <div className="patient">
-                <Bot character={game.patientBugId} eyes="idle" showTell size={260} />
-              </div>
-              <div className="bench">
-                <span className="nameplate">{skin.name.toUpperCase()}</span>
-              </div>
-              <span className="status">glitching</span>
-            </div>
-          )}
-
-          {phase === "meet" && (
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <button className="btn" onClick={() => setPhase("choose")}>
-                Open it up!
-              </button>
-            </div>
-          )}
-
-          {phase === "choose" && (
-            <div className="tray">
-              <span className="tray-head">YOUR TURN · PICK A TEST TOOL</span>
-              <div className="tools">
-                {tests.map((item) => (
-                  <button key={item.id} className="tool" onClick={() => chooseTest(item)}>
-                    {itemLabel(item)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {phase === "answer" && last && (
-            <>
-              <div className="readout">
-                <div className="slate">
-                  <div className="label">Problem</div>
-                  <div className="value">{itemLabel(last.item)}</div>
-                </div>
-                <div className="slate robot">
-                  <div className="label">{skin.name} says</div>
-                  <div className="value">{last.robotAnswer}</div>
-                </div>
-              </div>
-              <div className="tray">
-                <span className="tray-head">YOUR TURN · WHAT IS IT REALLY?</span>
-                <div className="answer-tray">
-                  <input
-                    autoFocus
-                    inputMode="numeric"
-                    value={childInput}
-                    placeholder="?"
-                    onChange={(e) => setChildInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && childInput.trim()) submitAnswer();
-                    }}
-                    aria-label="The correct answer"
-                  />
-                  <button className="btn sm" disabled={!childInput.trim()} onClick={submitAnswer}>
-                    That's it!
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-          {phase === "compare" && last && (
-            <>
-              <div className="readout">
-                <div className="slate">
-                  <div className="label">Problem</div>
-                  <div className="value">{itemLabel(last.item)}</div>
-                </div>
-                <div className="slate robot">
-                  <div className="label">{skin.name} says</div>
-                  <div className="value">{last.robotAnswer}</div>
-                </div>
-                <div className="slate truth">
-                  <div className="label">Really</div>
-                  <div className="value">{last.correctAnswer}</div>
-                </div>
-              </div>
-
-              <div className="chips">
-                <span className={`chip ${last.childWasRight ? "win" : ""}`}>
-                  {last.childWasRight ? "You had it right" : `You said ${last.childAnswer}`}
-                </span>
-                <span className="chip">{suspectCount(game.posterior)} suspects left</span>
-                {tied && <span className="chip warn">2 left, tied</span>}
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-                {canAccuse(game) ? (
-                  <button className="btn" onClick={() => accuse(leadingSuspect(game).id)}>
-                    I know what's wrong!
-                  </button>
-                ) : (
-                  <button className="btn teal" onClick={() => setPhase("choose")}>
-                    Run another test
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-
-          {phase === "repaired" && last && (
-            <div className="repair">
-              <div className="patient">
-                <Bot character={game.patientBugId} eyes="celebrating" showTell={false} size={190} />
-              </div>
-              <span className="found">CASE CLOSED</span>
-              <h2 className="bugname">{bug.childLabel}</h2>
-              <div className="readout">
-                <div className="slate">
-                  <div className="label">Proof</div>
-                  <div className="value">{itemLabel(last.item)}</div>
-                </div>
-                <div className="slate robot">
-                  <div className="label">{skin.name}</div>
-                  <div className="value">{last.robotAnswer}</div>
-                </div>
-                <div className="slate truth">
-                  <div className="label">Really</div>
-                  <div className="value">{last.correctAnswer}</div>
-                </div>
-              </div>
-              <div className="chips">
-                <span className="chip win">Found in {game.history.length} tests</span>
-                <span className="chip warn">Not fixed yet</span>
-              </div>
-              <Remediation bugId={game.patientBugId} />
-              <p className="aside">
-                Finding the bug is not fixing it. {skin.name} comes back in a couple of sessions
-                with this exact problem mixed into new work. Get it right then and the repair
-                sticks.
-              </p>
-              <button className="btn ghost sm" onClick={restart}>
-                Start over
-              </button>
-            </div>
-          )}
-
-          {game.history.length > 0 && phase !== "meet" && (
-            <div className="runlog">
-              <span className="cap">Tests run</span>
-              {game.history.map((h, i) => {
-                const dropped = h.suspectsBefore - h.suspectsAfter;
-                return (
-                  <span className="run" key={`${h.item.id}-${i}`}>
-                    {itemLabel(h.item)} → <b className="bad">{h.robotAnswer}</b>
-                    <span className="dot">·</span>
-                    <span className="out">{dropped > 0 ? `ruled out ${dropped}` : "no news"}</span>
-                  </span>
-                );
-              })}
-            </div>
-          )}
-        </main>
-
-        <SuspectBoard
-          posterior={game.posterior}
-          onAccuse={phase === "compare" || phase === "repaired" ? accuse : undefined}
-          tieHint={tieHint}
-          tieAnswer={last?.robotAnswer ?? null}
+      {screen.at === "bay" && (
+        <Bay
+          learner={learner}
+          onOpen={openCase}
+          onLog={() => setScreen({ at: "log" })}
+          onNextSession={() => {
+            const next = beginSession(learner);
+            setLearner(next);
+            if (dueRetests(next).length === 0) return;
+            /*
+             * The warm-up leads into the robot the child is about to work on,
+             * never the one being retested — naming the patient would give the
+             * probe away. Fresh problems come from the current rung of the
+             * ladder so they really are new material rather than a replay of
+             * the case that produced the retest.
+             */
+            const upNext = BUGS.find((b) => {
+              const st = getRecord(next, b.id).state;
+              return st === "unseen" || st === "diagnosed";
+            });
+            if (!upNext) return;
+            const warm = buildWarmup(next, currentBand(next), rng);
+            if (warm) setScreen({ at: "warmup", data: warm, next: upNext.id });
+          }}
         />
-      </div>
-    </div>
-  );
-}
+      )}
 
-function Say({ eyes, children }: { eyes: EyeState; children: React.ReactNode }) {
-  return (
-    <div className="say">
-      <Sprocket eyes={eyes} size={64} />
-      <div className="bubble">{children}</div>
+      {screen.at === "warmup" && (
+        <Warmup
+          data={screen.data}
+          nextBugId={screen.next}
+          onDone={(results) => finishWarmup(results, screen.next)}
+        />
+      )}
+
+      {screen.at === "outcome" && (
+        <Outcome results={screen.results} onContinue={() => setScreen({ at: "bay" })} />
+      )}
+
+      {screen.at === "case" && (
+        <Case
+          bugId={screen.bugId}
+          streak={getRecord(learner, screen.bugId).streak}
+          onFound={(id) => setLearner(recordDiagnosis(learner, id))}
+          onPractice={(id, ok) => setLearner(recordPractice(learner, id, ok))}
+          onExit={() => setScreen({ at: "bay" })}
+        />
+      )}
+
+      {screen.at === "log" && <Log learner={learner} onBack={() => setScreen({ at: "bay" })} />}
     </div>
   );
 }
