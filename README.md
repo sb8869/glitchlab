@@ -216,7 +216,19 @@ because you cannot notice a deviation from a rule you do not know.
 The suspect board opens as the *whole* library: the robot could have any of
 the thirteen bugs. One wrong answer rules out most of them at once, because
 every hypothesis predicting the correct answer is contradicted immediately.
-In the flagship case the board goes 14 -> 3 -> 1 in two tests.
+
+The flagship case runs **14 suspects -> 2 -> 1 in two tests**, and the middle
+step is the best thing in the demo. After `40 - 27` the board does not narrow
+to the answer — it deadlocks on exactly two suspects at 48.5% each:
+
+    48.5%  Always takes the small number from the big one
+    48.5%  Thinks zero take away something is that something
+
+Those are the structurally confounded pair from the collision report. Both
+write 27 on that problem, so no amount of repeating it or making it harder can
+separate them. `71 - 28` splits them apart and the leader jumps to 99.2%.
+The mechanic the whole submission rests on is visible on screen, in two moves,
+without anyone having to explain it.
 
 Three tests are offered each round, deliberately of mixed quality, and they
 are **not labeled**. One of them typically cannot separate the remaining
