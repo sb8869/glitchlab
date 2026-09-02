@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { bugById } from "../../bugs/library.ts";
 import { correct, itemLabel } from "../../bugs/procedures.ts";
 import type { Item } from "../../bugs/types.ts";
-import { STREAK_TO_PROBATION, discriminatingItems } from "../../learner/index.ts";
+import { generateForBug } from "../../bugs/generate.ts";
+import { STREAK_TO_PROBATION } from "../../learner/index.ts";
 import { SKINS, type EyeState } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
 import { Remediation } from "../components/Remediation.tsx";
@@ -50,7 +51,9 @@ export function Case({
   const bug = bugById(bugId);
   const last = game.history[game.history.length - 1] ?? null;
   const tests = useMemo(() => (phase === "choose" ? offerTests(game) : []), [game, phase]);
-  const drills = useMemo(() => discriminatingItems(bugId).slice(0, 6), [bugId]);
+  // Generated per visit: the drills a child does after finding a bug were
+  // otherwise the same six problems every time they met that robot.
+  const drills = useMemo(() => generateForBug(bugId, game.seed, 8), [bugId, game.seed]);
   const drill: Item | undefined = drills[practiceIndex % Math.max(1, drills.length)];
 
   const tied = isTied(game.posterior);

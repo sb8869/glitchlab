@@ -12,7 +12,7 @@
  */
 
 import { BANK } from "../../bugs/bank.ts";
-import { controlsForBand } from "../../bugs/controls.ts";
+import { generatePool } from "../../bugs/generate.ts";
 import { BUGS, predict } from "../../bugs/library.ts";
 import { correct } from "../../bugs/procedures.ts";
 import type { Band, HypothesisId, Item } from "../../bugs/types.ts";
@@ -131,13 +131,14 @@ export function startGame(patientBugId: string, seed = Math.floor(Math.random() 
 export function offerTests(state: GameState, count = 3): Item[] {
   const asked = new Set(state.askedIds);
   /*
-   * Controls come from outside the probe bank. The bank holds exactly one
-   * uninformative item per band, so drawing the dud from it alone put the same
-   * problem in 100% of hands — the informative slots varied and the useless one
-   * never did.
+   * Problems are generated per round, not drawn from the bank. A child fixing
+   * one robot sees about twelve problems and the bank holds ten, so a fixed
+   * pool is exhausted inside a single case and every retest afterwards is a
+   * rerun. Roles are measured by running the real bug library over each
+   * generated item, so the hand still has a real dud and a real best pick.
    */
-  const scored = [...bandBank(state.band), ...controlsForBand(state.band)]
-    .filter((i) => !asked.has(i.id))
+  const scored = generatePool(state.band, state.seed + state.askedIds.length * 7919)
+    .all.filter((i) => !asked.has(i.id))
     .map((item) => ({ item, gain: expectedInfoGain(state.posterior, item, ROBOT_CONFIG) }))
     .sort((a, b) => b.gain - a.gain);
 

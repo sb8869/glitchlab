@@ -7,15 +7,10 @@
  * to rule out.
  */
 
-import { BANK } from "../../bugs/bank.ts";
+import { generateForBug, generatePool } from "../../bugs/generate.ts";
 import { correct } from "../../bugs/procedures.ts";
 import type { Band, Item } from "../../bugs/types.ts";
-import {
-  bestRetestItem,
-  dueRetests,
-  interleave,
-  type LearnerState,
-} from "../../learner/index.ts";
+import { dueRetests, interleave, type LearnerState } from "../../learner/index.ts";
 
 export type WarmupSlot = {
   item: Item;
@@ -40,6 +35,7 @@ export function buildWarmup(
   band: Band,
   rng: () => number,
   freshCount = 3,
+  seed = learner.sessionIndex * 7717 + 13,
 ): Warmup | null {
   const due = dueRetests(learner);
   if (due.length === 0) return null;
@@ -47,16 +43,25 @@ export function buildWarmup(
   const retestSlots: WarmupSlot[] = [];
   const used = new Set<string>();
   for (const bugId of due) {
-    const item = bestRetestItem(bugId, BANK, used);
+    // The sharpest generated item for this bug: live on it, and shared with as
+    // few other bugs as possible so a miss points at this one alone.
+    const item = generateForBug(bugId, seed + bugId.length, 6).find((i) => !used.has(i.id));
     if (!item) continue;
     used.add(item.id);
     retestSlots.push({ item, answer: correct(item), retestFor: bugId });
   }
   if (retestSlots.length === 0) return null;
 
-  const fresh: WarmupSlot[] = BANK.filter((i) => i.band === band && !used.has(i.id))
+  /*
+   * Fresh problems come from the MIXED pool, not the control pool. Controls
+   * are the easy ones — no regrouping — and surrounding a hard retest with
+   * three easy problems would make it stand out as plainly as a label would.
+   * The camouflage has to be the same difficulty as the thing it hides.
+   */
+  const fresh: WarmupSlot[] = generatePool(band, seed + 101)
+    .all.filter((i) => !used.has(i.id))
     .slice(0, freshCount)
-    .map((item) => ({ item, answer: correct(item), retestFor: null }));
+    .map((item: Item) => ({ item, answer: correct(item), retestFor: null }));
 
   return {
     slots: interleave(fresh, retestSlots, rng),

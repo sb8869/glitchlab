@@ -29,7 +29,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 5. Game layer | full mastery loop playable, 8 screens |
 | 6. Remediation layer | done, 19 tests |
 
-`npm run check` — typecheck plus 112 tests, all green.
+`npm run check` — typecheck plus 121 tests, all green.
 
 ---
 
@@ -260,28 +260,34 @@ are **not labeled**. One of them cannot separate the remaining suspects at all.
 Discovering that some questions are worth more than others is the numeracy
 work, so the feedback arrives after the choice, not before.
 
-Within a quality tier the pick is random, seeded per visit — 108 distinct
-opening hands for the flagship robot, rather than the same three problems
-every time. The top-gain tier is usually several items with *identical*
-expected gain, so always taking the first was an arbitrary tie-break dressed up
-as a decision. A test asserts that the strongest option on the table still
-always reaches the deadlock, so the best frame in the demo does not depend on
-luck.
+Problems are **generated**, not drawn from a list. The bank holds ten
+subtraction items and a child fixing one robot sees about twelve of them —
+three offer rounds of three, plus three practice drills — so a fixed pool is
+exhausted inside a single case and every retest afterwards is a rerun.
+Shuffling the order does not help; it permutes the same numbers. Generation
+reaches roughly 8,000 distinct subtraction problems, 4,300 addition, 3,000
+place value and 1,900 fraction.
 
-The uninformative option is drawn from `src/bugs/controls.ts`, a set of
-problems on which no bug fires, deliberately kept OUT of the probe bank. The
-bank holds exactly one inert item per band, so drawing the dud from it put the
-same problem in 100% of hands even after the informative slots started varying
-— ten real playthroughs caught that. Padding the bank with duds would have
-fixed it too, but random item selection wastes turns on duds, so that would
-have flattered the headline result without the method improving. The evaluation
-bank stays exactly as measured; a test asserts the controls never leak into it,
-and another asserts every control is genuinely inert.
+The engine is untouched by this. Items are generated and then **classified by
+running the real bug library over them**, so an item's diagnostic role is
+measured rather than assumed: a control is an item on which nothing fires, a
+deadlock item is one where two live bugs write the same answer. The
+distinctness invariant does the rest — a generated item a bug does not
+discriminate on is automatically not claimed by it.
 
-What the offer logic deliberately does not do is filter an option out because
-of what the robot's actual answer would be. That would use hidden knowledge of
-the bug to steer the child's choice, which is the one thing the game is about
-not doing — even though it would make the demo more predictable.
+Generation preserves two promises the hand-built bank made. Subtraction never
+goes negative, and a generated fraction sum is only kept when it is already in
+lowest terms — otherwise a child writing 1/2 for 2/4 would be right and marked
+wrong.
+
+**This made the engine visibly better, and cost the demo something.** The bank's
+strongest question was a three-way split worth 1.19 bits. Generation finds
+items where all four live bugs write different answers, worth 1.32 bits, and
+information gain correctly prefers those. So the deadlock that used to be
+guaranteed on the best opening pick now happens about 71% of the time; the rest
+are resolved outright. That is the engine doing its job better than the bank
+allowed, and forcing it back to 100% would mean choosing offers using the
+robot's actual bug — the one thing the game is about not doing.
 
 A test with *lower* expected gain can still resolve the board in one move,
 because gain is an average over answers the robot might give and a narrow

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { itemLabel } from "../../bugs/procedures.ts";
+import { generatePool } from "../../bugs/generate.ts";
 import { gainOf, offerTests, runTest, startGame, suspectCount } from "./session.ts";
 
 const RIVET = "sub_smaller_from_larger";
@@ -30,20 +31,58 @@ test("every hand still contains a test that cannot separate anything", () => {
   }
 });
 
-test("the strongest option on the table always preserves the deadlock", () => {
-  // The tie is the clearest thing the engine does, and the demo must not
-  // depend on luck. For this robot the top-gain tier is exactly the set of
-  // tie-producing items, so the best available pick always reaches it.
-  for (let seed = 0; seed < 40; seed++) {
+test("the strongest option is always the most informative one generated", () => {
+  /*
+   * This used to assert the best offer always produces the deadlock, which was
+   * true only because the hand-built bank had no better question in it.
+   * Generation finds items where all four live bugs write DIFFERENT answers
+   * (1.32 bits against the bank's best 1.19), and the engine correctly prefers
+   * those. The invariant that actually holds is that the hand's best option is
+   * the best the pool had to offer.
+   */
+  for (let seed = 0; seed < 60; seed++) {
     const g = startGame(RIVET, seed);
     const offers = offerTests(g);
     const best = offers.reduce((a, b) => (gainOf(g, a) >= gainOf(g, b) ? a : b));
-    assert.equal(
-      suspectCount(runTest(g, best).posterior),
-      2,
-      `seed ${seed}: best offer ${itemLabel(best)} did not produce the tie`,
+    const poolBest = Math.max(
+      ...generatePool(g.band, g.seed).all.map((i) => gainOf(g, i)),
+    );
+    assert.ok(
+      gainOf(g, best) >= poolBest * 0.95,
+      `seed ${seed}: best offer is ${gainOf(g, best).toFixed(3)}, pool had ${poolBest.toFixed(3)}`,
     );
   }
+});
+
+test("the best question always splits the suspects hard, one way or the other", () => {
+  // Either it deadlocks two suspects or it identifies outright; what it never
+  // does is dribble.
+  for (let seed = 0; seed < 60; seed++) {
+    const g = startGame(RIVET, seed);
+    const offers = offerTests(g);
+    const best = offers.reduce((a, b) => (gainOf(g, a) >= gainOf(g, b) ? a : b));
+    const left = suspectCount(runTest(g, best).posterior);
+    assert.ok(left <= 2, `seed ${seed}: best offer left ${left} suspects`);
+  }
+});
+
+test("the deadlock stays reachable often enough to be the lesson it is meant to be", () => {
+  /*
+   * Measured, not assumed: about 71% of opening hands deadlock on the best
+   * pick for this robot; the rest are resolved outright by a four-way split.
+   * The floor guards against a change that quietly makes the board's sharpest
+   * moment rare. It is deliberately not 100% — forcing it would mean choosing
+   * offers using the robot's actual bug, which the game is about not doing.
+   */
+  let deadlocks = 0;
+  const N = 300;
+  for (let seed = 0; seed < N; seed++) {
+    const g = startGame(RIVET, seed);
+    const offers = offerTests(g);
+    const best = offers.reduce((a, b) => (gainOf(g, a) >= gainOf(g, b) ? a : b));
+    if (suspectCount(runTest(g, best).posterior) === 2) deadlocks++;
+  }
+  assert.ok(deadlocks / N > 0.6, `only ${((100 * deadlocks) / N).toFixed(0)}% deadlocked`);
 });
 
 test("offers never repeat a test already run", () => {
@@ -66,7 +105,7 @@ test("the dud varies too — no single problem shows up in every hand", () => {
   // varying while the uninformative one appeared in 100% of hands, because the
   // bank holds exactly one inert item per band.
   const seen = new Map<string, number>();
-  const N = 600;
+  const N = 300;
   for (let seed = 0; seed < N; seed++) {
     const g = startGame(RIVET, seed);
     for (const item of offerTests(g)) {
@@ -75,7 +114,7 @@ test("the dud varies too — no single problem shows up in every hand", () => {
   }
   const worst = Math.max(...seen.values());
   assert.ok(
-    worst / N < 0.4,
+    worst / N < 0.1,
     `one item appears in ${((100 * worst) / N).toFixed(0)}% of hands`,
   );
 });
@@ -84,7 +123,7 @@ test("a control can be offered, and running it teaches the intended lesson", () 
   // Zero information is the point: the child should be able to spend a turn
   // on a question that cannot possibly separate anything.
   const g = startGame(RIVET, 5);
-  const control = offerTests(g).find((i) => i.id.startsWith("ctl-"));
+  const control = offerTests(g).find((i) => gainOf(g, i) < 1e-6);
   if (!control) return; // seed happened to draw the bank's own dud
   assert.ok(gainOf(g, control) < 1e-6, "a control must carry no information");
   const after = runTest(g, control);
