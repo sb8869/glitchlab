@@ -1,0 +1,137 @@
+# Glitch Lab — submission
+
+**A K-4 math game that diagnoses *which* broken procedure a child is running,
+instead of deciding they are "bad at subtraction" and giving them easier sums.**
+
+Live link: _(to come)_ · Repo: this one · `npm run check` — typecheck + 125 tests
+
+---
+
+## The one-paragraph version
+
+When a child writes `40 - 27 = 27`, they are not guessing and they are not
+missing "subtraction." They are running a procedure — one that takes the small
+digit from the big one in every column — and it is perfectly consistent. Glitch
+Lab treats that procedure as the thing to find. The child meets a robot that
+does math wrong, picks which problem to test it with, and watches a board of
+fourteen suspects narrow to one. What the child never sees is that they are
+being diagnosed by the same engine at the same time: their own answer to each
+problem updates a second posterior over the same fourteen hypotheses. Mutual
+diagnosis, dressed as debugging a robot.
+
+Grounded in Brown & Burton's BUGGY (1978) and VanLehn's repair theory: children's
+arithmetic errors are overwhelmingly systematic, and a bug is a *procedure*,
+not a gap.
+
+## The architectural claim
+
+> **Diagnosis is deterministic TypeScript. There is no model anywhere in the
+> inference path.**
+
+- A misconception is an **executable function**, not a description. `applies(item)`
+  says whether the bug fires; `compute(item)` returns exactly what a child running
+  it would write. Predicting an answer is a function call.
+- The posterior over the fourteen hypotheses is **Bayes with a slip-and-guess
+  likelihood**, floored so nothing is ever eliminated outright.
+- The next problem is chosen by **expected information gain** over that posterior.
+- A structural invariant is enforced in a wrapper around every bug: a bug may not
+  claim an item where its own procedure returns the *correct* answer. A "bug" that
+  is invisible on an item is not live on it, and it does not get to absorb
+  probability there.
+
+This is auditable, reproducible and fast, in a way that "I asked a model what the
+child's misconception is" is not. It also means the diagnosis cannot hallucinate.
+
+**Nothing calls a service.** There is no API key, no backend, no network at play
+time, and no per-session cost. Remediation is derived from the same bug object
+the diagnosis used, and it works on a plane.
+
+## Does the method actually pay?
+
+`npm run simulate` — 500 synthetic students, 10% slip rate, 12-item budget,
+identical students in both arms, measured on a hand-verified 37-item bank the
+child's game never draws from:
+
+| | information gain | random items |
+| --- | --- | --- |
+| identification accuracy | **98.8%** (95% CI 97.8–99.8) | 79.0% (75.4–82.6) |
+| mean items asked | **4.35** | 9.73 |
+| reached the confidence threshold | 99.4% | 56.8% |
+
+Paired McNemar χ² = **89.92** (1 df; >3.84 is p<0.05). It degrades gracefully:
+at a 30% slip rate the engine is still at 92.8%.
+
+Two hypothesis pairs are **structurally confounded** — on every item where both
+are live they write the identical answer, provably, not accidentally — and are
+separable only by elimination. The game says so on screen rather than pretending
+otherwise.
+
+## Progression and mastery
+
+Rewarding a streak measures short-term recall. Glitch Lab measures retention:
+
+- Three correct in a row moves a robot to **probation**, never to repaired.
+- Two sessions later, that robot's own discriminating problem is **slipped back
+  into ordinary warm-up work**, unannounced and interleaved. Pass it then and the
+  repair is permanent. Fail and the robot cracks back open.
+- Progress is a **repair log**, not XP: thirteen competencies, finite, so a child
+  can see the end of the game from the first session. The band ladder runs place
+  value → addition regrouping → subtraction regrouping → fractions as numbers.
+
+## Problems are generated, not curated
+
+Every problem a child sees is procedurally generated and then **classified by
+running the real bug library over it** — so an item's role (control, tie, or
+splitter) is measured rather than asserted. Roughly 8,000 subtraction, 4,300
+addition, 3,000 place value and 1,900 fraction problems are reachable. The
+37-item bank exists only to evaluate the engine, and a test asserts that nothing
+the child sees comes from it.
+
+## Remediation shows the working
+
+Naming the bug is not teaching it. Once the bug is known the screen puts the two
+procedures side by side, worked out step by step — every borrow, carry and
+common-denominator rewrite computed by the engine:
+
+```
+   RIVET'S WAY                REALLY
+    4  4  5                4³ ¹4³ ¹5
+  − 1  4  7              − 1  4  7
+  ─────────              ─────────
+    3  0  2                2  9  8
+  always takes the small   trade a ten:
+  number from the big one  15 take away 7 is 8
+```
+
+The robot's side deliberately has **no** invented middle step: the taught
+procedure's steps are derivable, a buggy procedure's are not. Every sentence on
+that screen also passes a validator that extracts each arithmetic claim and
+checks it against engine-computed truth — including the sentences the app wrote
+itself, because "we wrote it" is not a proof that the arithmetic is right.
+
+## Two rules the interface never breaks
+
+1. **Sprocket never says "you're wrong."** A wrong answer is *data* in this app,
+   and the mascot has to behave like it. A miss shows the child the truth and
+   asks them to write it in; their original answer is what gets recorded.
+2. **The child is never shown a suspect list filtered by knowledge they don't
+   have.** The offered tests are not screened using the robot's actual bug, even
+   though that would make the demo more reliable.
+
+## Scope
+
+No auth, accounts, leaderboard, backend or server-side persistence. Progress is
+`localStorage`. Grades 1–4. Those cost days and prove nothing.
+
+---
+
+## Demo script (2:30)
+
+| time | on screen | said |
+| --- | --- | --- |
+| 0:00–0:20 | `40 - 27 = 27` written by a child | "This isn't a guess. It's a procedure — take the small digit from the big one, every column. Most math apps see one wrong answer and lower the difficulty." |
+| 0:20–0:50 | the bench, open Rivet, the glitch tell | "Fourteen suspects. The child picks which problem to test the robot with." |
+| 0:50–1:30 | pick a test, watch the board go 14 → 4 → 1 | "That's not animation. Each answer is a Bayesian update over fourteen executable procedures, and the next problem is chosen by expected information gain. 4.35 questions on average instead of 9.73." |
+| 1:30–1:50 | the tie card: two suspects, same answer | "These two are structurally confounded — on every item where both are live they write the identical answer. The game says so instead of guessing." |
+| 1:50–2:15 | CASE CLOSED, the two workings side by side | "Naming the bug isn't teaching it. Here's where the two procedures part company, computed, not written by a model." |
+| 2:15–2:30 | the bench two sessions later, retest inside warm-up | "It was never marked fixed on a streak. Two sessions later its own problem comes back inside ordinary work. Pass it then and it's repaired." |
