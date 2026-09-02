@@ -444,6 +444,17 @@ button:disabled { cursor: not-allowed; }
 }
 .way-cap { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); }
 .way-sum { font-size: 15px; font-weight: 800; margin-top: 2px; }
+
+/* Fraction working: the steps of the procedure, one per line. */
+.steps { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.steps .step {
+  font: 800 20px/1.3 var(--display); color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+/* An arrow, not an equals: "3/5 vs 1/3 = 3/5 is bigger" would be a false claim. */
+.steps .step + .step::before { content: "\2192\00a0"; color: var(--ink-faint); }
+.way.ok .steps .step.hot { color: var(--good); font-size: 26px; }
+.way.bad .steps .step.hot { color: var(--glitch); font-size: 26px; }
 .way-ans { font: 700 30px/1.1 var(--display); margin-top: 2px; }
 .way.bad { border-color: var(--glitch); background: var(--tint-glitch); }
 .way.bad .way-ans { color: var(--glitch); }

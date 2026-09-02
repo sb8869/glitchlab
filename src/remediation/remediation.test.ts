@@ -2,8 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { BUGS } from "../bugs/library.ts";
+import { predict } from "../bugs/library.ts";
+import { correct } from "../bugs/procedures.ts";
+import type { Item } from "../bugs/types.ts";
+import { traceFraction } from "./trace.ts";
 import {
   counterexampleFor,
+  exampleItemFor,
   extractClaims,
   fallbackFor,
   practiceFor,
@@ -136,5 +141,54 @@ test("every bug has remediation, with no network and no key", () => {
     const r = remediationFor(bug.id);
     assert.ok(r.childExplanation.length > 0);
     assert.ok(r.parentNote.length > 0);
+  }
+});
+
+/* ------------------------------------------------------- fraction working - */
+
+test("the taught side of a fraction shows the common-denominator step", () => {
+  const item: Item = {
+    id: "t-fa", band: "fraction_number", kind: "fracAdd",
+    a: { n: 1, d: 3 }, b: { n: 1, d: 2 },
+  };
+  const t = traceFraction(item, correct(item), true);
+  assert.equal(t.kind, "steps");
+  if (t.kind !== "steps") return;
+  assert.deepEqual(t.steps.map((s) => s.text), ["1/3 + 1/2", "2/6 + 3/6", "5/6"]);
+  assert.equal(t.steps[2]!.hot, true);
+  assert.match(t.caption!, /make both bottoms 6/);
+});
+
+test("the robot's side is never given a middle step it did not take", () => {
+  const item: Item = {
+    id: "t-fa2", band: "fraction_number", kind: "fracAdd",
+    a: { n: 1, d: 3 }, b: { n: 1, d: 2 },
+  };
+  const t = traceFraction(item, predict("frac_add_across", item), false);
+  assert.equal(t.kind, "steps");
+  if (t.kind !== "steps") return;
+  // Its problem and what it wrote. Nothing in between, because nothing in
+  // between is derivable from a bug object.
+  assert.deepEqual(t.steps.map((s) => s.text), ["1/3 + 1/2", "2/5"]);
+  assert.equal(t.caption, null);
+});
+
+test("a compare item ends on which one is bigger, not on an equals", () => {
+  const item: Item = {
+    id: "t-fc", band: "fraction_number", kind: "fracCompare",
+    a: { n: 3, d: 5 }, b: { n: 1, d: 3 },
+  };
+  const t = traceFraction(item, correct(item), true);
+  assert.equal(t.kind, "steps");
+  if (t.kind !== "steps") return;
+  assert.deepEqual(t.steps.map((s) => s.text), ["3/5 vs 1/3", "9/15 vs 5/15", "3/5 is bigger"]);
+});
+
+test("every fraction bug's counterexample gets a working, not a bare answer", () => {
+  for (const bug of BUGS) {
+    if (bug.band !== "fraction_number") continue;
+    const item = exampleItemFor(bug.id)!;
+    const taught = traceFraction(item, correct(item), true);
+    assert.equal(taught.kind, "steps", `${bug.id} has no working`);
   }
 });

@@ -4,7 +4,7 @@ import { SKINS } from "../assets/palette.ts";
 import { bugById } from "../../bugs/library.ts";
 import { remediationFor } from "../../remediation/index.ts";
 import { exampleItemFor, practiceItemFor } from "../../remediation/example.ts";
-import { traceArith, type Trace } from "../../remediation/trace.ts";
+import { traceArith, traceFraction, type Trace } from "../../remediation/trace.ts";
 import { AnswerInput, answerReady } from "./AnswerInput.tsx";
 import { BANK } from "../../bugs/bank.ts";
 
@@ -28,13 +28,30 @@ function Working({
   answer: string;
   note?: string;
 }) {
+  if (trace.kind === "steps") {
+    return (
+      <div className={`way ${tone}`}>
+        <div className="way-cap">{cap}</div>
+        <ol className="steps">
+          {trace.steps.map((st, i) => (
+            <li className={`step${st.hot ? " hot" : ""}`} key={i}>
+              {st.text}
+            </li>
+          ))}
+        </ol>
+        {(trace.caption ?? note) && <div className="way-note">{trace.caption ?? note}</div>}
+      </div>
+    );
+  }
+
   if (trace.kind !== "columns") {
-    // Fractions and expanded form have no column layout to show.
+    // Expanded form has neither columns nor steps worth spelling out.
     return (
       <div className={`way ${tone}`}>
         <div className="way-cap">{cap}</div>
         <div className="way-sum">{problem}</div>
         <div className="way-ans">{answer}</div>
+        {note && <div className="way-note">{note}</div>}
       </div>
     );
   }
@@ -81,12 +98,15 @@ export function Remediation({ bugId }: { bugId: string }) {
    */
   const exampleItem = exampleItemFor(bugId) ?? BANK.find((i) => i.id === r.example.itemId) ?? null;
   const practiceItem = practiceItemFor(bugId);
-  const robotTrace: Trace = exampleItem
-    ? traceArith(exampleItem, r.example.robotAnswer, r.example.correctAnswer, false)
-    : { kind: "plain" };
-  const correctTrace: Trace = exampleItem
-    ? traceArith(exampleItem, r.example.correctAnswer, r.example.robotAnswer, true)
-    : { kind: "plain" };
+  const isFrac = exampleItem?.kind === "fracAdd" || exampleItem?.kind === "fracCompare";
+  const traceOf = (answer: string, against: string, annotate: boolean): Trace => {
+    if (!exampleItem) return { kind: "plain" };
+    return isFrac
+      ? traceFraction(exampleItem, answer, annotate)
+      : traceArith(exampleItem, answer, against, annotate);
+  };
+  const robotTrace = traceOf(r.example.robotAnswer, r.example.correctAnswer, false);
+  const correctTrace = traceOf(r.example.correctAnswer, r.example.robotAnswer, true);
 
   return (
     <section className="remedy">

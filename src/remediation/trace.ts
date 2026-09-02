@@ -10,8 +10,8 @@
  * so no model is ever in a position to invent a step.
  */
 
-import { digitAt, digitsOf } from "../bugs/procedures.ts";
-import type { Item } from "../bugs/types.ts";
+import { digitAt, digitsOf, fracStr, itemLabel, lcm } from "../bugs/procedures.ts";
+import type { Frac, Item } from "../bugs/types.ts";
 
 export type Cell = {
   digit: string;
@@ -36,8 +36,19 @@ export type ColumnTrace = {
   caption: string | null;
 };
 
+/**
+ * Fractions have no columns, but they do have a procedure, and skipping a
+ * step of it is exactly what three of the four fraction bugs are. So the
+ * working here is the steps: rewrite over a common bottom, then act.
+ */
+export type StepTrace = {
+  kind: "steps";
+  steps: { text: string; hot?: boolean }[];
+  caption: string | null;
+};
+
 export type PlainTrace = { kind: "plain" };
-export type Trace = ColumnTrace | PlainTrace;
+export type Trace = ColumnTrace | StepTrace | PlainTrace;
 
 const pad = (xs: string[], width: number) =>
   Array.from({ length: width - xs.length }, () => "").concat(xs);
@@ -123,5 +134,52 @@ export function traceArith(
     result: paddedMine,
     differs: paddedMine.map((d, i) => d !== paddedTheirs[i]),
     caption: annotate ? caption : null,
+  };
+}
+
+/**
+ * The working for a fraction problem.
+ *
+ * `annotate` marks the taught side, which is the only side whose intermediate
+ * steps we are entitled to show: the common-denominator line is a step the
+ * correct procedure genuinely takes. A buggy procedure's middle is not
+ * something we can derive, so the robot's side is its problem and its answer,
+ * captioned with the bug's own words — inventing a plausible middle step for
+ * it would be the one thing this whole layer exists to avoid.
+ */
+export function traceFraction(item: Item, answer: string, annotate: boolean): Trace {
+  if (item.kind !== "fracAdd" && item.kind !== "fracCompare") return { kind: "plain" };
+
+  const label = itemLabel(item);
+  if (!annotate) {
+    return { kind: "steps", steps: [{ text: label }, { text: answer, hot: true }], caption: null };
+  }
+
+  const L = lcm(item.a.d, item.b.d);
+  const over = (f: Frac): string => fracStr({ n: f.n * (L / f.d), d: L });
+  const already = item.a.d === L && item.b.d === L;
+  const joiner = item.kind === "fracAdd" ? " + " : " vs ";
+  const rewrite = { text: `${over(item.a)}${joiner}${over(item.b)}` };
+
+  if (item.kind === "fracAdd") {
+    return {
+      kind: "steps",
+      steps: already
+        ? [{ text: label }, { text: answer, hot: true }]
+        : [{ text: label }, rewrite, { text: answer, hot: true }],
+      caption: already
+        ? "the bottoms already match, so add the tops and keep the bottom"
+        : `make both bottoms ${L}, then add the tops and keep the bottom`,
+    };
+  }
+
+  return {
+    kind: "steps",
+    steps: already
+      ? [{ text: label }, { text: `${answer} is bigger`, hot: true }]
+      : [{ text: label }, rewrite, { text: `${answer} is bigger`, hot: true }],
+    caption: already
+      ? "same bottoms, so the bigger top is the bigger piece"
+      : `make both bottoms ${L}, then the bigger top wins`,
   };
 }
