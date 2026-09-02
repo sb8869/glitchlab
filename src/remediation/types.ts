@@ -1,14 +1,13 @@
 /**
- * Remediation — the only place a model belongs in this app.
+ * Remediation — what the app says once the bug is known.
  *
- * It runs strictly AFTER the bug is known. Nothing here feeds the inference
- * path; diagnosis has already finished and is deterministic.
+ * It runs strictly AFTER diagnosis. Nothing here feeds the inference path.
  *
- * The division of labor is deliberate and is what makes the output safe to
- * put in front of a child: EVERY NUMBER IS COMPUTED, and the model only
- * writes the words around them. A model that hallucinates arithmetic can
- * therefore only produce prose that contradicts numbers we already hold — and
- * that contradiction is exactly what the validator catches.
+ * EVERY NUMBER SHOWN IS COMPUTED by the engine, and the sentences around
+ * those numbers are assembled by this app from the bug's own description.
+ * There is no generation step and no service call, so the only arithmetic a
+ * child can ever be shown is arithmetic the engine performed — and the
+ * validator in validate.ts holds that line even for text we wrote ourselves.
  */
 
 export type Counterexample = {
@@ -31,22 +30,4 @@ export type Remediation = {
   practice: Counterexample | null;
   /** Plain English for the adult, <= 700 characters. */
   parentNote: string;
-  source: "generated" | "fallback";
-  models?: { child: string; parent: string };
-};
-
-export type Usage = { inputTokens: number; outputTokens: number };
-
-export type CostLine = {
-  model: string;
-  usage: Usage;
-  /** Null when the model is not in the price table — never guessed. */
-  usd: number | null;
-};
-
-export type GenerationRecord = {
-  generatedAt: string;
-  entries: Record<string, Remediation>;
-  costs: CostLine[];
-  totalUsd: number | null;
 };

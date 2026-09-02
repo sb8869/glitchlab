@@ -1,7 +1,7 @@
 /**
  * The validation gate.
  *
- * Generated copy is checked against arithmetic the engine already computed
+ * Remediation copy is checked against arithmetic the engine already computed
  * before it is ever shown to a child. Copy that fails is discarded and the
  * deterministic fallback is used instead, so nothing unvalidated can reach
  * the screen.

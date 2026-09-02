@@ -27,9 +27,9 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 3. Simulation harness (500 students) | done, result below |
 | 4. Progression and mastery | done, 29 tests |
 | 5. Game layer | full mastery loop playable, 8 screens |
-| 6. Remediation layer | done, 19 tests |
+| 6. Remediation layer | done, 13 tests |
 
-`npm run check` — typecheck plus 123 tests, all green.
+`npm run check` — typecheck plus 117 tests, all green.
 
 ---
 
@@ -128,7 +128,7 @@ engineer in a way that "I prompted a model to guess the misconception" is not.
 src/bugs/       types, digit/fraction procedures, the 13 bugs, the probe bank
 src/engine/     posterior, likelihood, information gain, session driver
 src/learner/    repair log, delayed interleaved mastery, band ladder, storage
-src/remediation/ counterexample, prompts, the validation gate, cost, fallback
+src/remediation/ counterexample, column-by-column trace, the validation gate, copy
 src/ui/assets/  bot skeleton, eye states, glitch tells, palette, composition
 scripts/        collision report, simulation harness, contact sheet, mastery walkthrough
 design/         the Claude Design asset brief
@@ -367,41 +367,33 @@ is finite, so the child can see the end. The band ladder runs place value ->
 addition regrouping -> subtraction regrouping -> fractions as numbers, and a
 rung only opens when every bug in the band below is repaired.
 
-### Remediation: the only place a model belongs
+### Remediation: teaching, after the diagnosis
 
 It runs strictly after diagnosis, so nothing here touches the inference path.
-The division of labor is what makes it safe to put in front of a child:
 
-**Every number is computed; the model only writes the words.** The
-counterexample, the broken procedure's answer and the true answer all come
-from the engine. A model that hallucinates arithmetic can therefore only
-produce prose that contradicts numbers already on file.
+**Every number is computed, and so is the working.** The counterexample, the
+broken procedure's answer and the true answer all come from the engine, and
+`src/remediation/trace.ts` replays both procedures column by column with the
+borrows and carries written in. This matters more than the two answers do: a
+buggy procedure is a *procedure*, so showing only the results hides the thing
+being taught, which is where the two methods part company. The child sees the
+robot's column work beside the correct column work with the differing digits
+lit.
 
-**And that contradiction is checked.** `src/remediation/validate.ts` extracts
-every arithmetic assertion from generated text and verifies it before the copy
-is ever written to disk. The subtlety is that this copy is *supposed* to quote
-wrong answers — "Rivet says 71 - 28 is 57" is false as arithmetic and true
-about the robot — so a claim passes when it matches real arithmetic **or** when
-it is exactly what that bug's procedure computes. Anything else is a number
-nobody can account for and it is rejected. The gate also blocks technical ids,
-scolding, model artifacts, and copy too hard for a seven-year-old.
+**The words are assembled here too, and they are still checked.**
+`src/remediation/validate.ts` extracts every arithmetic assertion from the copy
+and verifies it against what the engine computed. The subtlety is that this
+copy is *supposed* to quote wrong answers — "Rivet says 71 - 28 is 57" is false
+as arithmetic and true about the robot — so a claim passes when it matches real
+arithmetic **or** when it is exactly what that bug's procedure computes.
+Anything else is a number nobody can account for and it is rejected. The gate
+also blocks technical ids, scolding, and copy too hard for a seven-year-old.
+Text we wrote ourselves goes through it too: "we wrote it" is not a proof that
+the arithmetic in it is right.
 
-The deterministic fallback is held to the same gate, because a fallback nobody
-checks is just an unvalidated string with a nicer name.
-
-**Generation is offline** (`npm run remediation`), and the result is committed.
-The deployed game needs no API key, no backend and no network at play time, and
-the cost on screen is a measured number rather than an estimate. Routing is by
-task complexity: the child explanation to Sonnet, the parent note to Haiku.
-Prices are per the published pricing page, and a model missing from the table
-reports a null cost rather than a guessed one.
-
-**The prompt contains the bug and three example problems — no name, no answers,
-no history.** The parent note says so on screen, so it is enforced by
-construction and pinned by a test rather than left to good intentions.
-
-Without a key the game runs entirely on the deterministic copy, which is what
-is committed today.
+**Nothing here calls a service.** There is no API key, no backend, no network
+at play time and no per-session cost, because the explanation is derived from
+the same bug object the diagnosis used. Remediation works on a plane.
 
 ### The 13 bugs
 
@@ -463,12 +455,11 @@ subtraction band demonstrates. Stated deliberately rather than silently.
 
 ```bash
 npm install          # typescript + @types/node, dev only — the engine has zero deps
-npm run check        # typecheck + 34 tests
+npm run check        # typecheck + 117 tests
 npm run simulate     # the evaluation numbers above
 npm run collisions   # per-item hypothesis fusion report
 npm run cast         # renders every character to out/contact-sheet.html
 npm run mastery      # walks through the delayed interleaved retest
-npm run remediation  # regenerate the model-written copy (needs ANTHROPIC_API_KEY)
 npm run dev          # the game
 npm run build        # production build into dist/
 ```
@@ -479,20 +470,12 @@ Node 22+, native type stripping, no build step. Relative imports end in `.ts`.
 
 ## What is next
 
-1. **Game layer** (`src/ui/`) — screens. The character system is done and the
-   final art is in: one 240x240 skeleton, three eye states, seven glitch tells,
-   nine silhouette variants and a 13-entry palette table compose the whole cast,
-   so a bot is a fill swap rather than a drawing. `npm run cast` renders all
-   fourteen. Sprocket the host, patient bots with a visible
-   glitch tell *before* the math starts, the belief display narrowing from nine
-   suspects to four to one, and the repair moment where the bug is named in
-   `childLabel` language. Sprocket never says "you're wrong": wrongness is data
-   in this app and the mascot has to behave like it.
-2. **Remediation** — the one place a model belongs. Once the bug is known, it
-   generates the counterexample that breaks that specific bug in language a
-   seven-year-old parses, plus a plain-English parent note. Cheap generations to
-   Haiku, explanations to Sonnet, cost per session instrumented and shown on
-   screen.
+1. **Fraction robots** — four of the thirteen are unreachable in play: the
+   answer box is numeric-only, so a child cannot type `17/24`, and compare
+   items need two buttons rather than a text field.
+2. **Deployment** — the live link half of the deliverable.
+3. **The end states** — the all-repaired screen and the empty repair log are
+   designed and not yet built.
 
 ### Known limitations
 

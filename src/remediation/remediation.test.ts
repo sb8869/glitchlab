@@ -3,19 +3,13 @@ import assert from "node:assert/strict";
 
 import { BUGS } from "../bugs/library.ts";
 import {
-  PRICES,
-  ROUTING,
-  costOf,
   counterexampleFor,
   extractClaims,
   fallbackFor,
-  formatUsd,
   practiceFor,
   remediationFor,
-  totalOf,
   validateCopy,
 } from "./index.ts";
-import { allowedPromptContent, buildChildPrompt, buildParentPrompt } from "./prompt.ts";
 
 const BUG = "sub_smaller_from_larger";
 const ex = () => counterexampleFor(BUG)!;
@@ -120,7 +114,7 @@ test("claim extraction handles the phrasings a model actually writes", () => {
 
 /* ------------------------------------------------ the shipped fallback --- */
 
-test("the deterministic fallback passes the same gate as generated copy", () => {
+test("the deterministic copy passes the validator it was built to satisfy", () => {
   // A fallback nobody checks is just an unvalidated string with a nicer name.
   for (const bug of BUGS) {
     const r = fallbackFor(bug.id);
@@ -137,85 +131,10 @@ test("the deterministic fallback passes the same gate as generated copy", () => 
   }
 });
 
-test("with nothing generated the app still has remediation for every bug", () => {
+test("every bug has remediation, with no network and no key", () => {
   for (const bug of BUGS) {
     const r = remediationFor(bug.id);
-    assert.equal(r.source, "fallback");
     assert.ok(r.childExplanation.length > 0);
     assert.ok(r.parentNote.length > 0);
-  }
-});
-
-/* --------------------------------------------------------------- cost ---- */
-
-test("cost is computed from real prices, and never guessed", () => {
-  const usd = costOf("claude-haiku-4-5", { inputTokens: 1000, outputTokens: 500 });
-  assert.ok(usd !== null);
-  // 1000 in at $1/MTok + 500 out at $5/MTok
-  assert.ok(Math.abs(usd! - (1000 * 1 + 500 * 5) / 1e6) < 1e-12);
-
-  assert.equal(costOf("some-model-we-do-not-price", { inputTokens: 10, outputTokens: 10 }), null);
-});
-
-test("an unknown model poisons the total rather than silently dropping out", () => {
-  assert.equal(
-    totalOf([
-      { model: "claude-haiku-4-5", usage: { inputTokens: 1, outputTokens: 1 }, usd: 0.001 },
-      { model: "mystery", usage: { inputTokens: 1, outputTokens: 1 }, usd: null },
-    ]),
-    null,
-  );
-  assert.equal(totalOf([]), 0);
-});
-
-test("both routed models are in the price table", () => {
-  assert.ok(PRICES[ROUTING.child], `${ROUTING.child} has no price`);
-  assert.ok(PRICES[ROUTING.parent], `${ROUTING.parent} has no price`);
-});
-
-test("cost formatting stays honest at tiny amounts", () => {
-  assert.equal(formatUsd(null), "cost unknown");
-  assert.equal(formatUsd(0.0004), "<$0.001");
-  assert.equal(formatUsd(0.0042), "$0.004");
-});
-
-/* ------------------------------------------------------------- privacy --- */
-
-test("prompts carry the bug and the numbers, and nothing about the child", () => {
-  // The parent note promises on screen that the only request sent contained
-  // the bug and three example problems, with no name and no history. That
-  // promise is only worth making if it is enforced here.
-  const forbidden = [
-    "child", "student", "learner", "session", "history", "streak",
-    "name", "age", "score", "progress", "localStorage", "Ada",
-  ];
-  for (const bug of BUGS) {
-    const ex = counterexampleFor(bug.id)!;
-    for (const p of [buildChildPrompt(bug.id, ex), buildParentPrompt(bug.id, ex)]) {
-      const joined = `${p.system}\n${p.user}`;
-      // The word "child" legitimately appears as an audience description, so
-      // check the DATA half only: every number in the user message must be one
-      // the engine computed.
-      const numbers = (p.user.match(/\d+/g) ?? []).filter((n) => n.length > 1);
-      const allowed = new Set(
-        allowedPromptContent(bug.id, ex).join(" ").match(/\d+/g) ?? [],
-      );
-      allowed.add("300"); // the stated character budget
-      allowed.add("600");
-      allowed.add("10");
-      for (const n of numbers) {
-        assert.ok(allowed.has(n), `${bug.id}: prompt leaks the number ${n}`);
-      }
-      assert.ok(!/\bsession \d|\bstreak\b|\bprobation\b/i.test(joined), `${bug.id}: leaks learner state`);
-      void forbidden;
-    }
-  }
-});
-
-test("prompts forbid the model from inventing arithmetic", () => {
-  const ex = counterexampleFor(BUG)!;
-  for (const p of [buildChildPrompt(BUG, ex), buildParentPrompt(BUG, ex)]) {
-    assert.match(p.system, /Never introduce or calculate a new number/);
-    assert.match(p.system, /[Nn]ever say the child is wrong/);
   }
 });

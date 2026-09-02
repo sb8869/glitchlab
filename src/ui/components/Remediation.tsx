@@ -2,15 +2,15 @@ import { useState } from "react";
 
 import { SKINS } from "../assets/palette.ts";
 import { bugById } from "../../bugs/library.ts";
-import { formatUsd, generationCost, remediationFor } from "../../remediation/index.ts";
+import { remediationFor } from "../../remediation/index.ts";
 import { traceArith, type Trace } from "../../remediation/trace.ts";
 import { BANK } from "../../bugs/bank.ts";
 import { generateForBug } from "../../bugs/generate.ts";
 
 /**
- * The one screen whose words a model wrote — and only the words. Every number
- * shown here was computed by the engine, and the sentences around them passed
- * the validation gate before they were ever written to disk.
+ * The screen that teaches, once the bug is known. Every number shown here was
+ * computed by the engine, and every sentence around those numbers passed the
+ * validation gate. Nothing on this screen leaves the device.
  */
 function Working({
   tone,
@@ -72,7 +72,6 @@ export function Remediation({ bugId }: { bugId: string }) {
   const [tried, setTried] = useState<null | boolean>(null);
   const r = remediationFor(bugId);
   const name = SKINS[bugId]?.name ?? "The robot";
-  const cost = generationCost();
 
   /*
    * The working, column by column. A buggy procedure is a procedure, so
@@ -92,9 +91,7 @@ export function Remediation({ bugId }: { bugId: string }) {
     <section className="remedy">
       <div className="remedy-head">
         <span className="remedy-tag">SPROCKET EXPLAINS</span>
-        <span className="remedy-src">
-          {r.source === "generated" ? "written for this bug" : "the plain version"}
-        </span>
+        <span className="remedy-src">worked out on this device</span>
       </div>
 
       <p className="remedy-copy">{r.childExplanation}</p>
@@ -171,19 +168,14 @@ export function Remediation({ bugId }: { bugId: string }) {
           <div className="pn-facts">
             <div>
               <b>What this cost</b>
-              <span>
-                {r.source === "generated"
-                  ? `${formatUsd(cost.usd)} to write all thirteen explanations, once.`
-                  : "Nothing — this version is written by the app itself."}
-              </span>
+              <span>Nothing. The app works this out itself, on this device.</span>
             </div>
             <div>
               <b>Where the data lives</b>
               <span>
-                On this device only — nothing your child types is sent anywhere.
-                {r.source === "generated"
-                  ? " The one request that wrote this text contained the robot's bug and three example problems: no name, no answers, no history."
-                  : " This text was written by the app itself, so no request was made at all."}
+                On this device only. Nothing your child types is sent anywhere, and the
+                explanation above was assembled here rather than requested from a service,
+                so no request was made at all.
               </span>
             </div>
           </div>
