@@ -31,6 +31,11 @@ import {
 
 type Phase = "meet" | "choose" | "answer" | "compare" | "found" | "practice";
 
+/** "1 test", "2 tests" — a seven-year-old notices. */
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
 export function Case({
   bugId,
   streak,
@@ -182,7 +187,7 @@ export function Case({
                     : tied
                       ? "Two suspects left, and they're tied."
                       : last.suspectsBefore - last.suspectsAfter > 0
-                        ? `That test ruled out ${last.suspectsBefore - last.suspectsAfter} suspects.`
+                        ? `That test ruled out ${plural(last.suspectsBefore - last.suspectsAfter, "suspect")}.`
                         : "That test didn't rule anything out. Some don't."}
                 </div>
               </>
@@ -309,7 +314,7 @@ export function Case({
               <span className={`chip ${last.childWasRight ? "win" : ""}`}>
                 {last.childWasRight ? "You had it right" : `You said ${last.childAnswer}`}
               </span>
-              <span className="chip">{suspectCount(game.posterior)} suspects left</span>
+              <span className="chip">{plural(suspectCount(game.posterior), "suspect")} left</span>
               {tied && <span className="chip warn">2 left, tied</span>}
             </div>
             <div style={{ display: "flex", justifyContent: "center" }}>
@@ -342,7 +347,7 @@ export function Case({
                 <span className="found">CASE CLOSED</span>
                 <h2 className="bugname">{bug.childLabel}</h2>
                 <div className="chips">
-                  <span className="chip win">Found in {game.history.length} tests</span>
+                  <span className="chip win">Found in {plural(game.history.length, "test")}</span>
                   <span className="chip warn">Not fixed yet</span>
                 </div>
               </div>

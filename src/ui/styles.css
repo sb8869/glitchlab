@@ -82,8 +82,32 @@ button:disabled { cursor: not-allowed; }
 .tally-label { font-family: var(--display); font-size: 16px; font-weight: 600; color: #fff; white-space: nowrap; }
 .tally-label.warn { color: var(--accent); }
 
+/*
+ * On a phone the top bar ran 133px past the right edge and took the whole
+ * page with it. The thirteen dots are the ornament and the count is the
+ * information, so the dots are what goes.
+ */
+@media (max-width: 560px) {
+  .app { padding: 12px 14px 36px; }
+  .topbar { padding: 8px 14px 8px 10px; gap: 10px; }
+  .brand svg { width: 34px; height: 34px; }
+  .brand-name { font-size: 20px; }
+  .slots { display: none; }
+  .tally-label { font-size: 14px; }
+  .panel { padding: 18px 16px; }
+  /* The two workings stack rather than squeeze into unreadable columns. */
+  .ways { grid-template-columns: 1fr; }
+  .answer-tray { justify-content: center; }
+}
+
 /* -------------------------------------------------------------- layout -- */
 .stage { display: grid; grid-template-columns: 1fr 400px; gap: 20px; align-items: start; }
+/*
+ * Grid items are min-width:auto by default, so one wide child (a column sum,
+ * a long index card) grows the track past the viewport and takes the page
+ * sideways with it. Wide content scrolls inside its own box instead.
+ */
+.stage > * { min-width: 0; }
 @media (max-width: 940px) { .stage { grid-template-columns: 1fr; } }
 
 .panel {
