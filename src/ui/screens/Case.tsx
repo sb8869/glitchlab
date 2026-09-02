@@ -328,14 +328,24 @@ export function Case({
 
         {phase === "found" && last && (
           <div className="repair">
-            <div className="patient">
-              <Bot character={bugId} eyes="celebrating" showTell={false} size={180} />
-            </div>
-            <span className="found">CASE CLOSED</span>
-            <h2 className="bugname">{bug.childLabel}</h2>
-            <div className="chips">
-              <span className="chip win">Found in {game.history.length} tests</span>
-              <span className="chip warn">Not fixed yet</span>
+            {/*
+              The verdict is a banner, not a stage. A full-height celebration
+              here pushed the actual teaching — the two methods worked out
+              column by column — below the fold, so the one screen built to
+              explain the bug was the one screen a child had to scroll to find.
+            */}
+            <div className="verdict">
+              <div className="patient sm">
+                <Bot character={bugId} eyes="celebrating" showTell={false} size={110} />
+              </div>
+              <div className="verdict-text">
+                <span className="found">CASE CLOSED</span>
+                <h2 className="bugname">{bug.childLabel}</h2>
+                <div className="chips">
+                  <span className="chip win">Found in {game.history.length} tests</span>
+                  <span className="chip warn">Not fixed yet</span>
+                </div>
+              </div>
             </div>
             <Remediation bugId={bugId} />
             <button className="btn" onClick={() => setPhase("practice")}>

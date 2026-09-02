@@ -209,18 +209,25 @@ button:disabled { cursor: not-allowed; }
 
 /* ------------------------------------------------------- fraction input -- */
 /* A fraction is written one number over another, so it is typed that way. */
-.fracbox {
-  display: inline-flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 8px 12px; border: var(--stroke) solid var(--ink); border-radius: 13px;
-  background: var(--surface);
-}
+/*
+ * Two cards with a bar between them, not a box with a line in it. The first
+ * pass wrapped both inputs in a border and put a thin rule between them; the
+ * focused input's outline touched that rule and the whole thing read as one
+ * blob with a shadow rather than as a fraction.
+ */
+.fracbox { display: inline-flex; flex-direction: column; align-items: center; gap: 9px; }
 .fracbox .fracin {
-  font: 700 26px var(--display); width: 86px; text-align: center; padding: 2px;
-  border: none; border-radius: 6px; background: transparent; color: var(--ink);
-  font-variant-numeric: tabular-nums;
+  font: 700 30px var(--display); width: 124px; text-align: center; padding: 6px 4px;
+  border: var(--stroke) solid var(--ink); border-radius: 12px;
+  background: var(--surface); color: var(--ink);
+  font-variant-numeric: tabular-nums; box-shadow: var(--hard-xs);
 }
-.fracbox .fracin:focus { outline: 3px solid var(--ink); outline-offset: 1px; }
-.fracbox .fracbar { display: block; width: 74px; height: 3px; background: var(--ink); border-radius: 2px; }
+/* Teal, so the focus ring never reads as part of the ink-colored bar. */
+.fracbox .fracin:focus {
+  outline: none; background: var(--tint-accent);
+  box-shadow: var(--hard-xs), 0 0 0 3px var(--teal-deep);
+}
+.fracbox .fracbar { display: block; width: 136px; height: 5px; background: var(--ink); border-radius: 3px; }
 
 /* Two fractions to choose between: the compare items are a tap, not a typo. */
 .pick { display: flex; gap: 14px; flex-wrap: wrap; }
@@ -399,6 +406,21 @@ button:disabled { cursor: not-allowed; }
 }
 .repair .bugname { font: 700 32px/1.2 var(--display); max-width: 20ch; margin: 0; }
 .repair .aside { color: var(--ink-soft); font-weight: 700; max-width: 46ch; font-size: 15px; }
+
+/* The verdict banner: bot beside the headline, so remediation stays in view. */
+.repair .verdict {
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 20px; width: 100%; text-align: left;
+}
+.repair .verdict .patient.sm svg { width: 108px; height: 108px; }
+.repair .verdict-text { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.repair .verdict .bugname { font-size: 26px; max-width: 26ch; }
+.repair .verdict .chips { justify-content: flex-start; }
+@media (max-width: 620px) {
+  .repair .verdict { flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+  .repair .verdict-text { align-items: center; }
+  .repair .verdict .chips { justify-content: center; }
+}
 
 /* ------------------------------------------------------------ remediation */
 .remedy {
