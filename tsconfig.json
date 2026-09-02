@@ -12,14 +12,20 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "lib": [
-      "ES2023"
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
     ],
     "types": [
-      "node"
-    ]
+      "node",
+      "vite/client"
+    ],
+    "jsx": "react-jsx"
   },
   "include": [
     "src/**/*.ts",
-    "scripts/**/*.ts"
+    "src/**/*.tsx",
+    "scripts/**/*.ts",
+    "vite.config.ts"
   ]
 }

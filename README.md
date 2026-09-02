@@ -26,7 +26,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 2. Inference engine (Bayes + information gain) | done, 15 tests |
 | 3. Simulation harness (500 students) | done, result below |
 | 4. Progression and mastery | done, 29 tests |
-| 5. Game layer | characters + final art done, screens not started |
+| 5. Game layer | playable core loop, final art in |
 | 6. Remediation layer | not started |
 
 `npm run check` — typecheck plus 77 tests, all green.
@@ -202,6 +202,35 @@ bot goes dead on screen. Expression is carried by eye shape alone, so
 `no overlay tell draws inside the eye band` is now asserted rather than
 remembered.
 
+### The game: mutual diagnosis
+
+The child debugs the robot while the engine debugs the child, and the same
+item does both jobs at once.
+
+A patient robot arrives visibly glitching. The child **picks which problem to
+test it with**, the robot answers wrongly and consistently according to its
+bug, and the suspect board narrows. The child is then asked what the answer
+should really have been — which is where their own arithmetic is exercised,
+because you cannot notice a deviation from a rule you do not know.
+
+The suspect board opens as the *whole* library: the robot could have any of
+the thirteen bugs. One wrong answer rules out most of them at once, because
+every hypothesis predicting the correct answer is contradicted immediately.
+In the flagship case the board goes 14 -> 3 -> 1 in two tests.
+
+Three tests are offered each round, deliberately of mixed quality, and they
+are **not labeled**. One of them typically cannot separate the remaining
+suspects at all. Discovering that some questions are worth more than others is
+the numeracy work, so the feedback arrives after the choice, not before.
+
+Diagnosing the robot uses the same engine with honest parameters rather than
+the child's: a machine never slips (`eps` 0.02 against a child's 0.1), and it
+arrived in the repair bay visibly broken, so almost no prior mass sits on "no
+bug" (0.06 against a child's 0.5).
+
+Finding the bug is explicitly not fixing it. The repair screen says so, which
+is what sets up the mastery rule below.
+
 ### Mastery: why a streak is not enough
 
 Everyone else rewards consecutive correct answers. Three in a row measures
@@ -307,6 +336,8 @@ npm run simulate     # the evaluation numbers above
 npm run collisions   # per-item hypothesis fusion report
 npm run cast         # renders every character to out/contact-sheet.html
 npm run mastery      # walks through the delayed interleaved retest
+npm run dev          # the game
+npm run build        # production build into dist/
 ```
 
 Node 22+, native type stripping, no build step. Relative imports end in `.ts`.

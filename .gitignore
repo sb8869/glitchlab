@@ -4,3 +4,5 @@ dist/
 out/
 .env
 .env.local
+*.local
+.vite/
