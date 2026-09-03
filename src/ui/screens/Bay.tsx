@@ -1,7 +1,12 @@
+import { useState } from "react";
+
 import { BUGS } from "../../bugs/library.ts";
-import { getRecord, type LearnerState } from "../../learner/index.ts";
+import { BAND_ORDER } from "../../bugs/types.ts";
+import { bandBelow, getRecord, isBandOpen, type LearnerState } from "../../learner/index.ts";
 import { SKINS } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
+
+const bandOf = (bugId: string) => BUGS.find((b) => b.id === bugId)!.band;
 
 const BAND_NAME: Record<string, string> = {
   place_value: "place value",
@@ -20,16 +25,26 @@ export function Bay({
   onOpen,
   onNextSession,
   onLog,
+  onStartOver,
 }: {
   learner: LearnerState;
   onOpen: (bugId: string) => void;
   onNextSession: () => void;
   onLog: () => void;
+  onStartOver: () => void;
 }) {
+  const [confirming, setConfirming] = useState(false);
   const by = (want: string[]) =>
     BUGS.filter((b) => want.includes(getRecord(learner, b.id).state)).map((b) => b.id);
 
-  const glitching = by(["unseen", "diagnosed"]);
+  const unfixed = by(["unseen", "diagnosed"]);
+  /*
+   * The ladder is a gate, not just a picture. A robot on a rung that has not
+   * opened yet is still on the bench — the game is finite and the child should
+   * be able to see the end of it — but it cannot be worked on.
+   */
+  const glitching = unfixed.filter((id) => isBandOpen(learner, bandOf(id)));
+  const locked = unfixed.filter((id) => !isBandOpen(learner, bandOf(id)));
   const probation = by(["probation"]);
   const repaired = by(["repaired"]);
   /*
@@ -37,7 +52,21 @@ export function Bay({
    * That is the end of the game and it has to look like one: an empty
    * "Glitching · 0" shelf reads as a bug, not as a finish.
    */
-  const clear = glitching.length === 0 && probation.length === 0 && repaired.length > 0;
+  const clear = unfixed.length === 0 && probation.length === 0 && repaired.length > 0;
+  /*
+   * Every robot found and drilled, none repaired yet: there is genuinely
+   * nothing to open. Sprocket used to go on asking "who's on the bench today?"
+   * over a screen where nothing was clickable.
+   */
+  const waiting = unfixed.length === 0 && probation.length > 0;
+  /*
+   * Name the rung they are actually on, which is the one below the LOWEST
+   * locked band — not below whichever locked robot happens to come first in
+   * the library, which is a subtraction robot and would send them to the
+   * wrong rung.
+   */
+  const lockedBands = BAND_ORDER.filter((b) => locked.some((id) => bandOf(id) === b));
+  const nextRung = lockedBands[0] ? bandBelow(lockedBands[0]) : null;
 
   return (
     <main className="panel bay">
@@ -45,13 +74,22 @@ export function Bay({
         <Bot character="sprocket" eyes={clear ? "celebrating" : "idle"} showTell={false} size={64} />
         <div className="bubble">
           <div className="line">
-            {clear ? "The bench is clear." : "Who's on the bench today?"}
+            {clear
+              ? "The bench is clear."
+              : waiting
+                ? "Every one of them is waiting on a retest."
+                : "Who's on the bench today?"}
           </div>
           <div className="quiet">
             {clear ? (
               <>
                 All {repaired.length} of them came back days later and got it right anyway.
                 That is the part that counts.
+              </>
+            ) : waiting ? (
+              <>
+                Nothing more to do today. Close up, and their problems come back round on
+                their own.
               </>
             ) : (
               <>
@@ -67,10 +105,29 @@ export function Bay({
         <section className="allclear">
           <span className="clear-stamp">EVERY ROBOT REPAIRED</span>
           <p className="log-sub">
-            Not one of them was signed off on a streak. Each one sat on the bench for two
-            sessions first, then had its own problem slipped back into ordinary work — and
-            passed it then.
+            Not one of them was signed off on a streak. Each one sat on the bench for a
+            few sessions first, then had its own problem slipped back into ordinary work —
+            and passed it then.
           </p>
+          {/*
+             A reset lives here and nowhere else. It is the one screen where
+             starting over is a reasonable thing to want, and the one screen
+             where a stray click cannot cost anybody their work in progress.
+          */}
+          {confirming ? (
+            <div className="chips">
+              <button className="btn sm" onClick={onStartOver}>
+                Yes, wipe it and start again
+              </button>
+              <button className="btn sm ghost" onClick={() => setConfirming(false)}>
+                Keep my repair log
+              </button>
+            </div>
+          ) : (
+            <button className="btn sm ghost" onClick={() => setConfirming(true)}>
+              Start a new lab
+            </button>
+          )}
         </section>
       )}
 
@@ -82,6 +139,23 @@ export function Bay({
           ids={glitching}
           onOpen={onOpen}
           tell
+        />
+      )}
+
+      {/*
+        Locked robots stay visible. The whole point of a finite bar is that the
+        child can see the end of it from the first session; hiding the rungs
+        they have not reached would take that away to save a little clutter.
+      */}
+      {locked.length > 0 && (
+        <Shelf
+          title="Not yet"
+          hint={
+            nextRung ? `finish the ${BAND_NAME[nextRung]} robots first` : "coming up later"
+          }
+          tone="mute"
+          ids={locked}
+          dashed
         />
       )}
 
@@ -140,7 +214,7 @@ function Shelf({
 }: {
   title: string;
   hint: string;
-  tone: "bad" | "warn" | "good";
+  tone: "bad" | "warn" | "good" | "mute";
   ids: string[];
   onOpen?: (bugId: string) => void;
   tell?: boolean;

@@ -4,6 +4,8 @@ import { BUGS } from "../bugs/library.ts";
 import { mulberry32 } from "../engine/session.ts";
 import {
   beginSession,
+  clearLearner,
+  createLearner,
   currentBand,
   getRecord,
   loadLearner,
@@ -118,6 +120,13 @@ export function App() {
           learner={learner}
           onOpen={openCase}
           onLog={() => setScreen({ at: "log" })}
+          onStartOver={() => {
+            // Wipe and open a fresh lab. Only reachable from the all-repaired
+            // screen, behind a confirm, so nothing in progress can be lost.
+            clearLearner();
+            setLearner(beginSession(createLearner()));
+            setScreen({ at: "bay" });
+          }}
           onNextSession={() => {
             const next = beginSession(learner);
             setLearner(next);

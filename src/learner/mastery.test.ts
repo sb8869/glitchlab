@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { BUGS } from "../bugs/library.ts";
 import {
   RETEST_DELAY_SESSIONS,
+  isBandOpen,
   RETEST_JITTER_SESSIONS,
   STREAK_TO_PROBATION,
   beginSession,
@@ -20,6 +21,7 @@ import {
   retestDue,
   type LearnerState,
 } from "./index.ts";
+import { BAND_ORDER, type Band } from "../bugs/types.ts";
 
 const BUG = "sub_smaller_from_larger";
 
@@ -202,4 +204,58 @@ test("the ladder runs place value -> addition -> subtraction -> fractions", () =
     seen.push(currentBand(s));
   }
   assert.deepEqual(seen, ["place_value", "add_regroup", "sub_regroup", "fraction_number"]);
+});
+
+/* -------------------------------------------------------- the band ladder */
+
+test("a rung stays shut until every robot on the rung below is found and drilled", () => {
+  let s = beginSession(createLearner());
+  const [first, second] = BAND_ORDER;
+  assert.equal(isBandOpen(s, first!), true, "the first rung is always open");
+  assert.equal(isBandOpen(s, second!), false, "nothing has been drilled yet");
+
+  const below = BUGS.filter((b) => b.band === first);
+  for (const b of below.slice(0, -1)) {
+    s = toProbation(s, b.id);
+    assert.equal(isBandOpen(s, second!), false, `${b.id} was not the last one`);
+  }
+  s = toProbation(s, below[below.length - 1]!.id);
+  assert.equal(isBandOpen(s, second!), true, "the whole rung below is drilled");
+});
+
+test("drilled, not repaired: the ladder does not wait on the retest clock", () => {
+  /*
+   * Gating on repair would hold the next rung hostage to a two-to-three
+   * session delay per robot — addition would not open for five or more
+   * visits. Reaching probation is the child's own work and takes one sitting.
+   */
+  let s = beginSession(createLearner());
+  for (const b of BUGS.filter((x) => x.band === BAND_ORDER[0])) s = toProbation(s, b.id);
+  assert.equal(progress(s).repaired, 0, "nothing is repaired yet");
+  assert.equal(isBandOpen(s, BAND_ORDER[1]!), true);
+});
+
+test("a robot cracking open never re-locks a rung the child is already on", () => {
+  // Otherwise a failed retest in place value would shut addition underneath
+  // a child part-way through diagnosing it.
+  let s = beginSession(createLearner());
+  const below = BUGS.filter((b) => b.band === BAND_ORDER[0]);
+  for (const b of below) s = toProbation(s, b.id);
+  assert.equal(isBandOpen(s, BAND_ORDER[1]!), true);
+
+  s = untilDue(s, below[0]!.id);
+  s = recordRetest(s, below[0]!.id, false).state;
+  assert.equal(getRecord(s, below[0]!.id).state, "diagnosed", "it did crack");
+  assert.equal(isBandOpen(s, BAND_ORDER[1]!), true, "the rung stayed open");
+});
+
+test("every rung opens eventually, in ladder order", () => {
+  let s = beginSession(createLearner());
+  const opened: Band[] = [];
+  for (const band of BAND_ORDER) {
+    assert.equal(isBandOpen(s, band), true, `${band} should be open by now`);
+    opened.push(band);
+    for (const b of BUGS.filter((x) => x.band === band)) s = toProbation(s, b.id);
+  }
+  assert.deepEqual(opened, [...BAND_ORDER]);
 });

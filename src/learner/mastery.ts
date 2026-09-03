@@ -238,6 +238,44 @@ export function bandOfBug(bugId: string): Band {
   return BUGS.find((b) => b.id === bugId)?.band ?? "place_value";
 }
 
+/**
+ * Has this robot been found AND drilled, at any point?
+ *
+ * Monotonic on purpose: a robot that cracks open on a failed retest drops
+ * back to `diagnosed`, and if the ladder read the live state a crack in place
+ * value would re-lock addition underneath a child already working there.
+ * `retestsFailed` only ever grows, so once true this stays true.
+ */
+export function hasBeenDrilled(state: LearnerState, bugId: string): boolean {
+  const r = getRecord(state, bugId);
+  return r.state === "probation" || r.state === "repaired" || r.retestsFailed > 0;
+}
+
+/**
+ * A rung opens once every robot on the rung below has been found and drilled.
+ *
+ * Drilled, not repaired. Gating on repair would mean waiting out a two-to-
+ * three session retest delay for every robot in a band before the next one
+ * opened — addition would not appear for five or more visits. Reaching
+ * probation is the child's own work and takes one sitting; the retest is the
+ * app's business, and holding the ladder hostage to it would punish them for
+ * a clock they cannot see.
+ */
+export function isBandOpen(state: LearnerState, band: Band): boolean {
+  for (const earlier of BAND_ORDER) {
+    if (earlier === band) return true;
+    const ids = BUGS.filter((b) => b.band === earlier).map((b) => b.id);
+    if (!ids.every((id) => hasBeenDrilled(state, id))) return false;
+  }
+  return true;
+}
+
+/** The rung a locked band is waiting on, for the copy that explains it. */
+export function bandBelow(band: Band): Band | null {
+  const i = BAND_ORDER.indexOf(band);
+  return i > 0 ? (BAND_ORDER[i - 1] ?? null) : null;
+}
+
 export function isBandComplete(state: LearnerState, band: Band): boolean {
   const ids = BUGS.filter((b) => b.band === band).map((b) => b.id);
   return ids.length > 0 && ids.every((id) => getRecord(state, id).state === "repaired");

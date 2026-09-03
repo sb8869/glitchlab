@@ -394,7 +394,18 @@ therefore has to span `localStorage` too.
 Progress is a repair log rather than XP: the bar is made of competencies and it
 is finite, so the child can see the end. The band ladder runs place value ->
 addition regrouping -> subtraction regrouping -> fractions as numbers, and a
-rung only opens when every bug in the band below is repaired.
+rung opens once every robot on the rung below has been found and drilled to
+probation.
+
+Drilled, not repaired — a deliberate choice. Gating on repair would hold each
+rung hostage to a two-to-three session retest delay for every robot beneath
+it, so addition would not appear for five or more visits. Reaching probation
+is the child's own work and takes one sitting; the retest is the app's
+business, and the ladder should not punish them for a clock they cannot see.
+The gate is also monotonic: a robot that cracks open on a failed retest never
+re-locks a rung the child is already working on. Robots on a shut rung stay
+visible on the bench, because a finite bar is only worth having if the end of
+it is in view.
 
 ### Remediation: teaching, after the diagnosis
 
