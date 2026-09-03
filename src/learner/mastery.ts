@@ -252,6 +252,22 @@ export function currentBand(state: LearnerState): Band {
   return BAND_ORDER[BAND_ORDER.length - 1]!;
 }
 
+/**
+ * The bands the child has actually worked in — where warm-up material comes
+ * from.
+ *
+ * Warm-ups used to draw from `currentBand`, the first rung not yet finished,
+ * which meant they were nearly all addition and place value. A subtraction
+ * retest riding in one was then the only subtraction on the page, and being
+ * the odd one out is a label. Material from every band they have touched
+ * gives the probe somewhere to hide.
+ */
+export function workedBands(state: LearnerState): Band[] {
+  const seen = new Set<Band>();
+  for (const b of BUGS) if (getRecord(state, b.id).state !== "unseen") seen.add(b.band);
+  return BAND_ORDER.filter((b) => seen.has(b));
+}
+
 export function bandProgress(state: LearnerState, band: Band): { repaired: number; total: number } {
   const ids = BUGS.filter((b) => b.band === band).map((b) => b.id);
   return {

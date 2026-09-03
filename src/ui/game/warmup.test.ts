@@ -13,12 +13,14 @@ import {
   recordDiagnosis,
   recordPractice,
   retestDue,
+  workedBands,
   type LearnerState,
 } from "../../learner/index.ts";
 import { WARMUP_SIZE, buildWarmup } from "./warmup.ts";
 
 const BUG = "sub_smaller_from_larger";
 const OTHER = "sub_borrow_no_decrement";
+const ADD = "add_carry_dropped";
 
 function toProbation(s: LearnerState, bugId: string): LearnerState {
   let next = recordDiagnosis(s, bugId);
@@ -40,34 +42,79 @@ const readyForRetest = () => untilDue(toProbation(beginSession(createLearner()),
 
 test("a warm-up is built every session, due retest or not", () => {
   // Appearing only when something is due would announce the probe by existing.
-  const quiet = buildWarmup(beginSession(createLearner()), "add_regroup", mulberry32(1));
+  const quiet = buildWarmup(beginSession(createLearner()), mulberry32(1));
   assert.equal(quiet.retesting, null);
   assert.equal(quiet.slots.length, WARMUP_SIZE);
 });
 
 test("a warm-up is the same length whether or not a retest rides in it", () => {
-  const quiet = buildWarmup(beginSession(createLearner()), "sub_regroup", mulberry32(4));
-  const loaded = buildWarmup(readyForRetest(), "sub_regroup", mulberry32(4));
+  const quiet = buildWarmup(beginSession(createLearner()), mulberry32(4));
+  const loaded = buildWarmup(readyForRetest(), mulberry32(4));
   assert.equal(loaded.slots.length, quiet.slots.length);
   assert.equal(loaded.retesting, BUG);
 });
 
 test("a due retest rides along inside ordinary warm-up problems", () => {
-  const w = buildWarmup(readyForRetest(), "add_regroup", mulberry32(3));
+  const w = buildWarmup(readyForRetest(), mulberry32(3));
   assert.equal(w.slots.filter((s) => s.retestFor).length, 1);
   assert.ok(w.slots.length > 1, "a retest alone would be an exam, not a warm-up");
 });
 
 test("the retest is never the first problem the child sees", () => {
   for (let seed = 0; seed < 200; seed++) {
-    const w = buildWarmup(readyForRetest(), "add_regroup", mulberry32(seed));
+    const w = buildWarmup(readyForRetest(), mulberry32(seed));
     assert.equal(w.slots[0]!.retestFor, null, `seed ${seed} led with the retest`);
   }
 });
 
 test("every warm-up slot carries its own correct answer", () => {
-  const w = buildWarmup(readyForRetest(), "add_regroup", mulberry32(9));
+  const w = buildWarmup(readyForRetest(), mulberry32(9));
   for (const slot of w.slots) assert.ok(slot.answer.length > 0);
+});
+
+/* -------------------------------------------- the probe is not the odd one */
+
+test("the retest always has a twin: same band, same kind", () => {
+  /*
+   * This is the property that makes the probe unfindable without doing the
+   * arithmetic. Warm-ups used to come from the current rung of the ladder, so
+   * they were nearly all addition — and a subtraction retest was then the only
+   * subtraction on the page. A child could point at it having learned nothing.
+   */
+  for (const bug of BUGS) {
+    let s = toProbation(beginSession(createLearner()), bug.id);
+    // Give them a second band to have worked in, as a real player would.
+    const other = BUGS.find((b) => b.band !== bug.band)!;
+    s = recordDiagnosis(s, other.id);
+    s = untilDue(s, bug.id);
+
+    for (let seed = 0; seed < 12; seed++) {
+      const w = buildWarmup(s, mulberry32(seed));
+      const probe = w.slots.find((x) => x.retestFor);
+      assert.ok(probe, `${bug.id}: no probe at seed ${seed}`);
+      const twins = w.slots.filter(
+        (x) => x !== probe && x.item.band === probe.item.band && x.item.kind === probe.item.kind,
+      );
+      assert.ok(
+        twins.length >= 1,
+        `${bug.id} seed ${seed}: probe ${probe.item.band}/${probe.item.kind} stood alone in ` +
+          w.slots.map((x) => `${x.item.band}/${x.item.kind}`).join(", "),
+      );
+    }
+  }
+});
+
+test("warm-up material comes from bands the child has worked in", () => {
+  let s = beginSession(createLearner());
+  s = recordDiagnosis(s, BUG); // subtraction only
+  const only = buildWarmup(s, mulberry32(5));
+  assert.deepEqual(workedBands(s), ["sub_regroup"]);
+  for (const slot of only.slots) assert.equal(slot.item.band, "sub_regroup");
+
+  s = recordDiagnosis(s, ADD); // now addition too
+  const mixed = buildWarmup(s, mulberry32(5));
+  const bands = new Set(mixed.slots.map((x) => x.item.band));
+  assert.ok(bands.size >= 1 && [...bands].every((b) => workedBands(s).includes(b)));
 });
 
 /* ------------------------------------------------------------- the queue */
@@ -80,7 +127,7 @@ test("only one retest ever rides in a warm-up, however many are due", () => {
   s = untilDue(s, OTHER);
   assert.equal(dueRetests(s).length, 2, "both should be due");
 
-  const w = buildWarmup(s, "sub_regroup", mulberry32(11));
+  const w = buildWarmup(s, mulberry32(11));
   assert.equal(w.slots.filter((x) => x.retestFor).length, RETESTS_PER_WARMUP);
   assert.equal(w.slots.length, WARMUP_SIZE, "the queue must not lengthen the warm-up");
 });

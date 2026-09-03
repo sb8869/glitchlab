@@ -609,6 +609,21 @@ button:disabled { cursor: not-allowed; }
   background: var(--surface); color: var(--ink);
 }
 .np-in:focus { outline: 3px solid var(--accent); outline-offset: 1px; }
+/*
+ * A fraction answer in the notepad. The .np-in box style is a 96px-wide text
+ * field; handed to a fraction box or a pair of choice buttons it squeezed them
+ * into a column, so those two shapes take the class for identity only and
+ * reset the width and the border themselves.
+ */
+.np-row .fracbox.np-in,
+.np-row .pick.np-in { width: auto; border: none; background: none; padding: 0; }
+.np-row .fracbox.np-in { gap: 5px; }
+.np-row .fracbox.np-in .fracin { width: 78px; font-size: 20px; padding: 2px; }
+.np-row .fracbox.np-in .fracbar { width: 86px; height: 4px; }
+.np-row .pick.np-in { gap: 8px; flex-wrap: nowrap; }
+.np-row .pick.np-in .pickbtn { min-width: 62px; padding: 6px 12px; }
+.np-row .pick.np-in .fg-n, .np-row .pick.np-in .fg-d { font-size: 19px; }
+.np-row:has(.fracbox), .np-row:has(.pick) { height: auto; padding: 6px 0; }
 .np-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .np-dots { display: flex; align-items: center; gap: 6px; }
 .np-dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); }

@@ -7,6 +7,8 @@ export type RetestOutcome = {
   correct: boolean;
   /** The problem they actually answered, not a stand-in for it. */
   problem: string;
+  /** They reached the answer, but only after being shown the working. */
+  needed: boolean;
 };
 
 /**
@@ -48,7 +50,9 @@ export function Outcome({
                 is sometimes wrong. */}
             {r.correct
               ? "That problem came back days later, mixed into ordinary work, and you held it."
-              : "That's useful: now we know exactly where to look."}
+              : r.needed
+                ? "You got there in the end — but it took a look at the working first."
+                : "That's useful: now we know exactly where to look."}
           </div>
         </div>
       </div>
@@ -87,7 +91,12 @@ export function Outcome({
               happened, quietly showing something that did not.
             */}
             <span>
-              {r.problem} · {r.correct ? "you held it" : "the bug is still hiding in there"}
+              {r.problem} ·{" "}
+              {r.correct
+                ? "you held it"
+                : r.needed
+                  ? "right in the end, but not on your own"
+                  : "the bug is still hiding in there"}
             </span>
           </li>
           <li className={r.correct ? "on" : ""}>
@@ -103,7 +112,13 @@ export function Outcome({
         reads this — restating the rule after the fact is a lecture. The
         failing side keeps its line, which is reassurance rather than a rule.
       */}
-      {!r.correct && <p className="aside">Most bugs come back once. It's how we know they're real.</p>}
+      {!r.correct && (
+        <p className="aside">
+          {r.needed
+            ? "A repair counts when it holds without a nudge. This one nearly did — it goes back on the bench and comes round again."
+            : "Most bugs come back once. It's how we know they're real."}
+        </p>
+      )}
 
       <div style={{ display: "flex", justifyContent: "center" }}>
         {/* Back to the bench. What to work on next is the child's call. */}

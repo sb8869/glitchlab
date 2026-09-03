@@ -6,23 +6,39 @@
  * is one they can prime for, and priming is exactly what this mechanic exists
  * to rule out.
  *
- * Two properties do the hiding, and both are load-bearing:
+ * Four properties do the hiding, and all four are load-bearing:
  *
  *   FIXED LENGTH, EVERY SESSION. A warm-up that only appeared when something
  *   was due would announce itself by existing, and one that grew with the
- *   queue would announce itself by length. Four problems, always, whether a
- *   retest rides along or not.
+ *   queue would announce itself by length. Four problems, always.
  *
  *   AT MOST ONE RETEST. With five robots due, five probes in an eight-problem
  *   warm-up is not camouflage — the difficulty visibly jumps. The rest keep
- *   their place in the queue; waiting past the minimum is stronger evidence of
- *   retention, not weaker.
+ *   their place in the queue; waiting past the minimum is stronger evidence
+ *   of retention, not weaker.
+ *
+ *   THE PROBE IS NEVER THE ODD ONE OUT. Every warm-up is two matched pairs:
+ *   two problems of one band and kind, two of another. A retest always has a
+ *   twin. Warm-ups used to be drawn from the current rung of the ladder,
+ *   which made them nearly all addition — so a subtraction retest was the
+ *   only subtraction on the page, and a child could pick it out without
+ *   knowing any arithmetic at all.
+ *
+ *   MATERIAL COMES FROM BANDS THE CHILD HAS WORKED IN, whether or not a
+ *   retest rides. If the mix shifted to the probe's band only when a probe
+ *   was present, the mix would be the tell.
  */
 
 import { generateForBug, generatePool } from "../../bugs/generate.ts";
 import { correct } from "../../bugs/procedures.ts";
-import type { Band, Item } from "../../bugs/types.ts";
-import { interleave, nextRetest, type LearnerState } from "../../learner/index.ts";
+import type { Band, Item, ItemKind } from "../../bugs/types.ts";
+import {
+  currentBand,
+  interleave,
+  nextRetest,
+  workedBands,
+  type LearnerState,
+} from "../../learner/index.ts";
 
 export type WarmupSlot = {
   item: Item;
@@ -43,45 +59,82 @@ export type Warmup = {
 };
 
 export const WARMUP_SIZE = 4;
+/** No band and kind ever appears alone: the odd one out would be the probe. */
+export const WARMUP_PAIR = 2;
 
-/**
- * Build the warm-up for a session. Always returns one: its presence carries
- * no information about whether anything is being tested.
- */
 export function buildWarmup(
   learner: LearnerState,
-  band: Band,
   rng: () => number,
   size = WARMUP_SIZE,
   seed = learner.sessionIndex * 7717 + 13,
 ): Warmup {
-  const used = new Set<string>();
-  const retestSlots: WarmupSlot[] = [];
   const bugId = nextRetest(learner);
+  const retestItem = bugId ? (generateForBug(bugId, seed + bugId.length, 6)[0] ?? null) : null;
 
-  if (bugId) {
-    // The sharpest generated item for this bug: live on it, and shared with as
-    // few other bugs as possible so a miss points at this one alone.
-    const item = generateForBug(bugId, seed + bugId.length, 6)[0];
-    if (item) {
-      used.add(item.id);
-      retestSlots.push({ item, answer: correct(item), retestFor: bugId });
+  const worked = workedBands(learner);
+  const bands: Band[] = worked.length > 0 ? worked : [currentBand(learner)];
+
+  const used = new Set<string>();
+  if (retestItem) used.add(retestItem.id);
+
+  let draws = 0;
+  const poolFor = (band: Band): Item[] =>
+    generatePool(band, seed + ++draws * 9973, 60).all.filter((i) => !used.has(i.id));
+
+  const claim = (items: Item[]): Item[] => {
+    for (const i of items) used.add(i.id);
+    return items;
+  };
+
+  /** `want` problems of one band, all of the same kind where the band has one. */
+  function takeMatched(band: Band, kind: ItemKind | null, want: number): Item[] {
+    if (want <= 0) return [];
+    const pool = poolFor(band);
+    const wanted = kind ?? pool[0]?.kind ?? null;
+    const same = pool.filter((i) => i.kind === wanted).slice(0, want);
+    // A band may not hold enough of one kind; band alone still beats nothing.
+    for (const i of pool) {
+      if (same.length >= want) break;
+      if (!same.includes(i)) same.push(i);
     }
+    return claim(same.slice(0, want));
   }
 
-  /*
-   * Fresh problems come from the MIXED pool, not the control pool. Controls
-   * are the easy ones — no regrouping — and surrounding a hard retest with
-   * three easy problems would make it stand out as plainly as a label would.
-   * The camouflage has to be the same difficulty as the thing it hides.
-   */
-  const fresh: WarmupSlot[] = generatePool(band, seed + 101)
-    .all.filter((i) => !used.has(i.id))
-    .slice(0, size - retestSlots.length)
-    .map((item: Item) => ({ item, answer: correct(item), retestFor: null }));
+  const fresh: Item[] = [];
+  const rotate = (n: number) => bands[Math.abs(seed + n) % bands.length]!;
+
+  if (retestItem) {
+    // The twin: same band, same kind, so the probe is never the singleton.
+    fresh.push(...takeMatched(retestItem.band, retestItem.kind, WARMUP_PAIR - 1));
+  }
+
+  const primary = retestItem ? retestItem.band : rotate(0);
+  if (!retestItem) fresh.push(...takeMatched(primary, null, WARMUP_PAIR));
+
+  // The remaining pairs come from another band the child has worked in, so the
+  // shape of a warm-up is the same whether or not a probe is in it.
+  const others = bands.filter((b) => b !== primary);
+  let pick = 1;
+  while (fresh.length + (retestItem ? 1 : 0) < size) {
+    const band = others.length > 0 ? others[Math.abs(seed + pick) % others.length]! : primary;
+    const before = fresh.length;
+    fresh.push(...takeMatched(band, null, Math.min(WARMUP_PAIR, size - fresh.length - (retestItem ? 1 : 0))));
+    if (fresh.length === before) break; // nothing left to draw; do not spin
+    pick++;
+  }
+
+  const toSlot = (item: Item, retestFor: string | null): WarmupSlot => ({
+    item,
+    answer: correct(item),
+    retestFor,
+  });
 
   return {
-    slots: interleave(fresh, retestSlots, rng),
-    retesting: retestSlots[0]?.retestFor ?? null,
+    slots: interleave(
+      fresh.map((i) => toSlot(i, null)),
+      retestItem && bugId ? [toSlot(retestItem, bugId)] : [],
+      rng,
+    ),
+    retesting: retestItem ? bugId : null,
   };
 }

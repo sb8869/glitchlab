@@ -44,6 +44,7 @@ export function AnswerInput({
   onSubmit,
   autoFocus = false,
   label = "Your answer",
+  className = "",
 }: {
   item: Item | null | undefined;
   value: string;
@@ -52,10 +53,12 @@ export function AnswerInput({
   onSubmit: (value: string) => void;
   autoFocus?: boolean;
   label?: string;
+  /** Extra class for the host screen — the warm-up notepad styles its own box. */
+  className?: string;
 }) {
   if (item?.kind === "fracCompare") {
     return (
-      <div className="pick" role="group" aria-label={label}>
+      <div className={`pick ${className}`.trim()} role="group" aria-label={label}>
         {[item.a, item.b].map((f) => {
           const s = fracStr(f);
           return (
@@ -84,7 +87,7 @@ export function AnswerInput({
       if (e.key === "Enter" && answerReady(item, value)) onSubmit(value);
     };
     return (
-      <div className="fracbox">
+      <div className={`fracbox ${className}`.trim()}>
         <input
           className="fracin"
           inputMode="numeric"
@@ -111,6 +114,7 @@ export function AnswerInput({
 
   return (
     <input
+      className={className}
       autoFocus={autoFocus}
       inputMode="numeric"
       value={value}

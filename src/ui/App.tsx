@@ -131,7 +131,7 @@ export function App() {
               at: "later",
               session: next.sessionIndex,
               waiting: BUGS.filter((b) => getRecord(next, b.id).state === "probation").length,
-              warm: buildWarmup(next, currentBand(next), rng),
+              warm: buildWarmup(next, rng),
             });
           }}
         />
