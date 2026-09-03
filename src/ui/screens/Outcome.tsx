@@ -18,17 +18,17 @@ export type RetestOutcome = {
  * and the result is framed as information: the bug showed us where it hides.
  */
 export function Outcome({
-  results,
-  nextName,
+  result: r,
   onContinue,
 }: {
-  results: RetestOutcome[];
-  /** The robot the child picked before the warm-up, which is where this goes. */
-  nextName: string | null;
+  /*
+   * One verdict, not a list. A second retest resolving in the same warm-up
+   * would have had no screen to appear on, so the repair log would have
+   * changed behind the child's back. buildWarmup carries one; this says so.
+   */
+  result: RetestOutcome;
   onContinue: () => void;
 }) {
-  const r = results[0];
-  if (!r) return null;
 
   const skin = SKINS[r.bugId]!;
   const bug = bugById(r.bugId);
@@ -43,8 +43,11 @@ export function Outcome({
               : `Hm — ${skin.name}'s crack opened back up.`}
           </div>
           <div className="quiet">
+            {/* Not "two sessions later" — the delay carries a jitter, so the
+                copy states the shape of the rule rather than a number that
+                is sometimes wrong. */}
             {r.correct
-              ? "That problem came back two sessions later and you held it."
+              ? "That problem came back days later, mixed into ordinary work, and you held it."
               : "That's useful: now we know exactly where to look."}
           </div>
         </div>
@@ -94,17 +97,18 @@ export function Outcome({
         </ol>
       </div>
 
-      <p className="aside">
-        {r.correct
-          ? "Three in a row only looks fixed. Coming back days later and still getting it right is what makes a repair real."
-          : "Most bugs come back once. It's how we know they're real."}
-      </p>
+      {/*
+        Nothing on the passing side. "Three in a row only looks fixed" explains
+        why probation exists, and probation is already over by the time anyone
+        reads this — restating the rule after the fact is a lecture. The
+        failing side keeps its line, which is reassurance rather than a rule.
+      */}
+      {!r.correct && <p className="aside">Most bugs come back once. It's how we know they're real.</p>}
 
       <div style={{ display: "flex", justifyContent: "center" }}>
-        {/* Says where it goes. It used to say "Have another look" and go to
-            the bench, which was neither a look nor the robot they picked. */}
+        {/* Back to the bench. What to work on next is the child's call. */}
         <button className="btn" onClick={onContinue}>
-          {nextName ? `On to ${nextName} \u2192` : "Back to the bench"}
+          Back to the bench
         </button>
       </div>
     </main>

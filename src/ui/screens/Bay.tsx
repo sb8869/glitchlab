@@ -1,5 +1,5 @@
 import { BUGS } from "../../bugs/library.ts";
-import { dueRetests, getRecord, type LearnerState } from "../../learner/index.ts";
+import { getRecord, type LearnerState } from "../../learner/index.ts";
 import { SKINS } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
 
@@ -32,7 +32,6 @@ export function Bay({
   const glitching = by(["unseen", "diagnosed"]);
   const probation = by(["probation"]);
   const repaired = by(["repaired"]);
-  const due = new Set(dueRetests(learner));
   /*
    * The bench is clear when nothing is glitching and nothing is on probation.
    * That is the end of the game and it has to look like one: an empty
@@ -86,15 +85,23 @@ export function Bay({
         />
       )}
 
+      {/*
+        The probation shelf is INERT on purpose. It used to say "one is due
+        now", relabel the due robot "retest due", and let the child click it —
+        which handed them the answer to the only question the retest asks:
+        which procedure is being checked. A child who knows that can prime for
+        it, and "got it right when they saw it coming" is exactly what the
+        streak already measured and what this mechanic exists to stop
+        trusting. Seeing that robots are waiting is honest; saying which one
+        is up, or letting them take the probe deliberately, is not.
+      */}
       {probation.length > 0 && (
         <Shelf
           title="Waiting on a retest"
-          hint={due.size > 0 ? "one is due now" : "the problem comes back later"}
+          hint="the problem comes back later"
           tone="warn"
           ids={probation}
-          onOpen={onOpen}
           dashed
-          due={due}
         />
       )}
 
@@ -130,7 +137,6 @@ function Shelf({
   tell = false,
   dashed = false,
   eyes = "idle",
-  due,
 }: {
   title: string;
   hint: string;
@@ -140,7 +146,6 @@ function Shelf({
   tell?: boolean;
   dashed?: boolean;
   eyes?: "idle" | "celebrating";
-  due?: Set<string>;
 }) {
   return (
     <section className={`shelf ${tone}${dashed ? " dashed" : ""}`}>
@@ -152,17 +157,16 @@ function Shelf({
         {ids.map((id) => {
           const skin = SKINS[id]!;
           const bug = BUGS.find((b) => b.id === id)!;
-          const isDue = due?.has(id) ?? false;
           return (
             <button
               key={id}
-              className={`bot-card${onOpen ? " open" : ""}${isDue ? " due" : ""}`}
+              className={`bot-card${onOpen ? " open" : ""}`}
               onClick={onOpen ? () => onOpen(id) : undefined}
               disabled={!onOpen}
             >
               <Bot character={id} eyes={eyes} showTell={tell} size={72} />
               <span className="bot-name">{skin.name}</span>
-              <span className="bot-band">{isDue ? "retest due" : BAND_NAME[bug.band]}</span>
+              <span className="bot-band">{BAND_NAME[bug.band]}</span>
             </button>
           );
         })}

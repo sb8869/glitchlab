@@ -3,7 +3,6 @@ import { useState } from "react";
 import { itemLabel } from "../../bugs/procedures.ts";
 import { Bot } from "../components/Bot.tsx";
 import { digitsOnly } from "../components/answer.ts";
-import { SKINS } from "../assets/palette.ts";
 import type { Warmup as WarmupData } from "../game/warmup.ts";
 
 /**
@@ -15,18 +14,14 @@ import type { Warmup as WarmupData } from "../game/warmup.ts";
  */
 export function Warmup({
   data,
-  nextBugId,
   onDone,
 }: {
   data: WarmupData;
-  /** Whose case this warm-up leads into — the only robot named on screen. */
-  nextBugId: string;
   onDone: (results: Array<{ bugId: string; correct: boolean; problem: string }>) => void;
 }) {
   const [index, setIndex] = useState(0);
   const [entry, setEntry] = useState("");
   const [given, setGiven] = useState<string[]>([]);
-  const next = SKINS[nextBugId]!;
 
   function submit() {
     const value = entry.trim();
@@ -55,7 +50,12 @@ export function Warmup({
       <div className="say">
         <Bot character="sprocket" eyes="idle" showTell={false} size={64} />
         <div className="bubble">
-          <div className="line">{next.name}'s next. Four quick ones to warm up first.</div>
+          {/*
+            No robot is named here. This screen names nobody and looks the
+            same every session, because the moment it hints at who is being
+            tested, the probe is one the child can prime for.
+          */}
+          <div className="line">A few to warm up on.</div>
           <div className="quiet">Just you this time — no robot answers to check.</div>
         </div>
       </div>

@@ -32,7 +32,15 @@ import {
   type GameState,
 } from "../game/session.ts";
 
-type Phase = "meet" | "choose" | "answer" | "compare" | "found" | "practice";
+type Phase =
+  | "meet"
+  | "choose"
+  | "answer"
+  | "compare"
+  | "found"
+  /** The bug is already known: straight to the working, then the drills. */
+  | "reopen"
+  | "practice";
 
 /** "1 test", "2 tests" — a seven-year-old notices. */
 function plural(n: number, word: string): string {
@@ -41,12 +49,15 @@ function plural(n: number, word: string): string {
 
 export function Case({
   bugId,
+  reopen = false,
   streak,
   onFound,
   onPractice,
   onExit,
 }: {
   bugId: string;
+  /** The bug is already known — skip the board and reopen at the bench. */
+  reopen?: boolean;
   /** Consecutive correct practice answers so far, from the learner. */
   streak: number;
   onFound: (bugId: string) => void;
@@ -54,7 +65,7 @@ export function Case({
   onExit: () => void;
 }) {
   const [game, setGame] = useState<GameState>(() => startGame(bugId));
-  const [phase, setPhase] = useState<Phase>("meet");
+  const [phase, setPhase] = useState<Phase>(reopen ? "reopen" : "meet");
   const [childInput, setChildInput] = useState("");
   const [missed, setMissed] = useState(false);
   /** Their first answer, when it was not the right one. */
@@ -94,7 +105,7 @@ export function Case({
   const eyes: EyeState =
     phase === "found" || done
       ? "celebrating"
-      : missed || practiceMiss || misses > 0
+      : phase === "reopen" || missed || practiceMiss || misses > 0
         ? "thinking"
         : "idle";
 
@@ -158,7 +169,7 @@ export function Case({
   }
 
   return (
-    <div className="stage">
+    <div className={`stage${phase === "reopen" ? " solo" : ""}`}>
       <main className="panel">
         <div className="say">
           <Bot character="sprocket" eyes={eyes} showTell={false} size={64} />
@@ -167,6 +178,14 @@ export function Case({
               <>
                 <div className="line">This is {skin.name}. Something in there is glitching.</div>
                 <div className="quiet">Your job: work out exactly what it does wrong.</div>
+              </>
+            )}
+            {phase === "reopen" && (
+              <>
+                <div className="line">We already know what {skin.name} does wrong.</div>
+                <div className="quiet">
+                  No need to find it twice — here it is again, then let's fix it.
+                </div>
               </>
             )}
             {phase === "choose" && (
@@ -249,7 +268,7 @@ export function Case({
           </div>
         </div>
 
-        {phase !== "found" && phase !== "practice" && (
+        {phase !== "found" && phase !== "practice" && phase !== "reopen" && (
           <div className="bench-wrap">
             <div className="spotlight" />
             <div className="patient">
@@ -389,6 +408,34 @@ export function Case({
           </>
         )}
 
+        {/*
+          Reopening a known bug. A robot that cracked open on a retest, or one
+          left half-drilled, used to land back on the fourteen-suspect board
+          and have to be rediagnosed — four or five questions spent
+          rediscovering something the app already holds. The diagnosis board
+          is for robots whose bug we do not know.
+        */}
+        {phase === "reopen" && (
+          <div className="repair">
+            <div className="verdict">
+              <div className="patient sm">
+                <Bot character={bugId} eyes="idle" showTell size={110} />
+              </div>
+              <div className="verdict-text">
+                <span className="found warn">BACK ON THE BENCH</span>
+                <h2 className="bugname">{bug.childLabel}</h2>
+                <div className="chips">
+                  <span className="chip warn">Found already · not fixed yet</span>
+                </div>
+              </div>
+            </div>
+            <Remediation bugId={bugId} />
+            <button className="btn" onClick={() => setPhase("practice")}>
+              Let's fix it
+            </button>
+          </div>
+        )}
+
         {phase === "found" && last && (
           <div className="repair">
             {/*
@@ -502,13 +549,21 @@ export function Case({
         )}
       </main>
 
-      <SuspectBoard
-        posterior={game.posterior}
-        onAccuse={phase === "compare" ? accuse : undefined}
-        tieHint={tieHint}
-        tieAnswer={last?.robotAnswer ?? null}
-        tieProblem={last ? itemLabel(last.item) : null}
-      />
+      {/*
+        No board once the bug is known. On "found" it stays up as the payoff —
+        fourteen cards down to one. On "reopen" there is nothing to narrow:
+        showing fourteen live suspects for a bug already on the card would
+        say the opposite of what the screen says.
+      */}
+      {phase !== "reopen" && (
+        <SuspectBoard
+          posterior={game.posterior}
+          onAccuse={phase === "compare" ? accuse : undefined}
+          tieHint={tieHint}
+          tieAnswer={last?.robotAnswer ?? null}
+          tieProblem={last ? itemLabel(last.item) : null}
+        />
+      )}
     </div>
   );
 }

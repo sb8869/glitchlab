@@ -8,6 +8,7 @@ import { BUGS } from "../bugs/library.ts";
 import { BAND_ORDER, type Band } from "../bugs/types.ts";
 import {
   RETEST_DELAY_SESSIONS,
+  RETEST_JITTER_SESSIONS,
   STATE_VERSION,
   STREAK_TO_PROBATION,
   type LearnerState,
@@ -24,6 +25,7 @@ function blank(bugId: string): RepairRecord {
     streak: 0,
     diagnosedInSession: null,
     probationSince: null,
+    retestAfter: null,
     retestsPassed: 0,
     retestsFailed: 0,
     repairedInSession: null,
@@ -91,21 +93,60 @@ export function recordPractice(
     if (r.state === "probation" || r.state === "repaired") return r;
     const streak = correct ? r.streak + 1 : 0;
     if (streak >= STREAK_TO_PROBATION) {
-      return { ...r, state: "probation", streak, probationSince: state.sessionIndex };
+      return {
+        ...r,
+        state: "probation",
+        streak,
+        probationSince: state.sessionIndex,
+        retestAfter: retestSession(bugId, state.sessionIndex),
+      };
     }
     return { ...r, state: r.state === "unseen" ? "diagnosed" : r.state, streak };
   });
+}
+
+/**
+ * When this robot's retest is allowed to appear: two sessions, plus up to one
+ * more chosen per robot. The jitter is deterministic — a pure function of the
+ * bug id and the session it went on probation — so the same state always
+ * schedules the same way and nothing has to be threaded through an rng.
+ */
+export function retestSession(bugId: string, probationSince: number): number {
+  let h = 0;
+  for (let i = 0; i < bugId.length; i++) h = (Math.imul(h, 31) + bugId.charCodeAt(i)) | 0;
+  const slack = Math.abs(h + probationSince) % (RETEST_JITTER_SESSIONS + 1);
+  return probationSince + RETEST_DELAY_SESSIONS + slack;
 }
 
 /** True once enough sessions have passed for the retest to be allowed. */
 export function retestDue(state: LearnerState, bugId: string): boolean {
   const r = getRecord(state, bugId);
   if (r.state !== "probation" || r.probationSince === null) return false;
-  return state.sessionIndex - r.probationSince >= RETEST_DELAY_SESSIONS;
+  const after = r.retestAfter ?? retestSession(bugId, r.probationSince);
+  return state.sessionIndex >= after;
 }
 
+/** Every due retest, longest-waiting first. Ties broken by id, never by luck. */
 export function dueRetests(state: LearnerState): string[] {
-  return Object.keys(state.records).filter((id) => retestDue(state, id));
+  const dueAt = (id: string) => {
+    const r = getRecord(state, id);
+    return r.retestAfter ?? retestSession(id, r.probationSince ?? 0);
+  };
+  return Object.keys(state.records)
+    .filter((id) => retestDue(state, id))
+    .sort((a, b) => dueAt(a) - dueAt(b) || a.localeCompare(b));
+}
+
+/**
+ * The one retest a warm-up may carry, or null.
+ *
+ * One, not all of them: a warm-up where most of the problems are probes is
+ * not camouflage, it is a test with decoration. The rest keep their place in
+ * the queue and ride along on later visits — waiting longer than the minimum
+ * is stronger evidence of retention, not weaker.
+ */
+export function nextRetest(state: LearnerState): string | null {
+  return dueRetests(state)[0] ?? null;
 }
 
 /**
@@ -125,14 +166,21 @@ export function recordRetest(
           ...r,
           state: "repaired",
           streak: 0,
+          retestAfter: null,
           retestsPassed: r.retestsPassed + 1,
           repairedInSession: state.sessionIndex,
         }
       : {
+          /*
+           * A failed retest sends the robot back to the repair loop, not back
+           * to the retest queue. Probing the same gap again without teaching
+           * anything in between would just measure the same miss twice.
+           */
           ...r,
           state: "diagnosed",
           streak: 0,
           probationSince: null,
+          retestAfter: null,
           retestsFailed: r.retestsFailed + 1,
         },
   );

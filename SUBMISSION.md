@@ -93,9 +93,12 @@ this starts.
 Rewarding a streak measures short-term recall. Glitch Lab measures retention:
 
 - Three correct in a row moves a robot to **probation**, never to repaired.
-- Two sessions later, that robot's own discriminating problem is **slipped back
-  into ordinary warm-up work**, unannounced and interleaved. Pass it then and the
-  repair is permanent. Fail and the robot cracks back open.
+- Two sessions later — plus up to one more, jittered per robot so a batch
+  repaired together does not come due together — that robot's own discriminating
+  problem is **slipped back into ordinary warm-up work**, unannounced and
+  interleaved. At most one probe rides in any warm-up, and warm-ups are the same
+  length every session, so neither their presence nor their size says anything.
+  Pass it and the repair is permanent. Fail and the robot cracks back open.
 - Progress is a **repair log**, not XP: thirteen competencies, finite, so a child
   can see the end of the game from the first session. The band ladder runs place
   value → addition regrouping → subtraction regrouping → fractions as numbers.
@@ -157,4 +160,4 @@ nothing.
 | 0:50–1:30 | pick a test, watch the board go 14 → 4 → 1 | "That's not animation. Each answer is a Bayesian update over fourteen executable procedures, and the next problem is chosen by expected information gain. 4.35 questions on average instead of 9.73." |
 | 1:30–1:50 | the tie card: two suspects, same answer | "These two are structurally confounded — on every item where both are live they write the identical answer. The game says so instead of guessing." |
 | 1:50–2:15 | CASE CLOSED, the two workings side by side | "Naming the bug isn't teaching it. Here's where the two procedures part company, computed, not written by a model." |
-| 2:15–2:30 | the bench two sessions later, retest inside warm-up | "It was never marked fixed on a streak. Two sessions later its own problem comes back inside ordinary work. Pass it then and it's repaired." |
+| 2:15–2:30 | a later session, the retest hidden in the warm-up | "It was never marked fixed on a streak. A few sessions later its own problem turns up inside ordinary work — unlabelled, never first, one per visit. Pass it then and it's repaired." |

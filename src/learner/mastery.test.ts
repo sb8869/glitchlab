@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { BUGS } from "../bugs/library.ts";
 import {
   RETEST_DELAY_SESSIONS,
+  RETEST_JITTER_SESSIONS,
   STREAK_TO_PROBATION,
   beginSession,
   createLearner,
@@ -29,11 +30,16 @@ function toProbation(state: LearnerState, bugId = BUG): LearnerState {
   return s;
 }
 
+/** Advance sessions until this bug's retest is allowed. Jitter makes it 2 or 3. */
+function untilDue(state: LearnerState, bugId = BUG): LearnerState {
+  let s = state;
+  for (let i = 0; i < 8 && !retestDue(s, bugId); i++) s = beginSession(s);
+  return s;
+}
+
 /** Take a bug all the way to repaired, including the delay. */
 function fullyRepair(state: LearnerState, bugId: string): LearnerState {
-  let s = toProbation(state, bugId);
-  for (let i = 0; i < RETEST_DELAY_SESSIONS; i++) s = beginSession(s);
-  return recordRetest(s, bugId, true).state;
+  return recordRetest(untilDue(toProbation(state, bugId), bugId), bugId, true).state;
 }
 
 /* ------------------------------------------- the rule the product rests on */
@@ -49,23 +55,31 @@ test("a streak does NOT repair a bug — it only earns probation", () => {
 });
 
 test("the retest is delayed: it cannot appear in the session that earned it", () => {
-  let s = toProbation(beginSession(createLearner()));
-  assert.equal(retestDue(s, BUG), false);
-  assert.deepEqual(dueRetests(s), []);
-
-  // Still too early one session later.
-  s = beginSession(s);
-  assert.equal(retestDue(s, BUG), false);
-
-  // Two sessions later it is due, exactly as specified.
-  s = beginSession(s);
-  assert.equal(retestDue(s, BUG), true);
-  assert.deepEqual(dueRetests(s), [BUG]);
+  /*
+   * The rule is a floor, not an exact date. Two sessions must pass; a robot
+   * may also carry up to one session of jitter so that a batch repaired in
+   * one sitting does not all come due in the same later one. What must never
+   * happen is a retest arriving early.
+   */
+  for (const bug of BUGS) {
+    let s = toProbation(beginSession(createLearner()), bug.id);
+    for (let i = 0; i < RETEST_DELAY_SESSIONS; i++) {
+      assert.equal(retestDue(s, bug.id), false, `${bug.id} came due after ${i} sessions`);
+      assert.deepEqual(dueRetests(s), []);
+      s = beginSession(s);
+    }
+    // And it must actually arrive, within the delay plus the jitter.
+    for (let i = 0; i <= RETEST_JITTER_SESSIONS; i++) {
+      if (retestDue(s, bug.id)) break;
+      s = beginSession(s);
+    }
+    assert.equal(retestDue(s, bug.id), true, `${bug.id} never came due`);
+    assert.deepEqual(dueRetests(s), [bug.id]);
+  }
 });
 
 test("passing the delayed retest makes the repair permanent", () => {
-  let s = toProbation(beginSession(createLearner()));
-  for (let i = 0; i < RETEST_DELAY_SESSIONS; i++) s = beginSession(s);
+  const s = untilDue(toProbation(beginSession(createLearner())));
   const { state, outcome } = recordRetest(s, BUG, true);
   assert.equal(outcome, "repaired");
   assert.equal(getRecord(state, BUG).state, "repaired");
@@ -75,8 +89,7 @@ test("passing the delayed retest makes the repair permanent", () => {
 });
 
 test("failing the delayed retest cracks the robot back open", () => {
-  let s = toProbation(beginSession(createLearner()));
-  for (let i = 0; i < RETEST_DELAY_SESSIONS; i++) s = beginSession(s);
+  let s = untilDue(toProbation(beginSession(createLearner())));
   const { state, outcome } = recordRetest(s, BUG, false);
   assert.equal(outcome, "cracked");
 
@@ -89,8 +102,7 @@ test("failing the delayed retest cracks the robot back open", () => {
 });
 
 test("a cracked robot can be repaired again, and the log remembers", () => {
-  let s = toProbation(beginSession(createLearner()));
-  for (let i = 0; i < RETEST_DELAY_SESSIONS; i++) s = beginSession(s);
+  let s = untilDue(toProbation(beginSession(createLearner())));
   s = recordRetest(s, BUG, false).state;
   s = fullyRepair(beginSession(s), BUG);
 

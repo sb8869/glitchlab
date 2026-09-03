@@ -14,8 +14,8 @@ import {
   saveLearner,
   type LearnerState,
 } from "../learner/index.ts";
-import { SKINS } from "./assets/palette.ts";
 import { Sprocket } from "./components/Bot.tsx";
+import { Peek, peekEnabled } from "./components/Peek.tsx";
 import { buildWarmup, type Warmup as WarmupData } from "./game/warmup.ts";
 import { Bay } from "./screens/Bay.tsx";
 import { Case } from "./screens/Case.tsx";
@@ -28,11 +28,12 @@ const TOTAL = BUGS.length;
 
 type Screen =
   | { at: "bay" }
-  /** The beat between sessions. */
-  | { at: "later"; session: number; waiting: number }
-  | { at: "warmup"; data: WarmupData; next: string }
-  | { at: "outcome"; results: RetestOutcome[]; next: string }
-  | { at: "case"; bugId: string }
+  /** The beat between sessions, carrying the warm-up that opens the next one. */
+  | { at: "later"; session: number; waiting: number; warm: WarmupData }
+  | { at: "warmup"; data: WarmupData }
+  | { at: "outcome"; result: RetestOutcome }
+  /** `reopen` when the bug is already known: skip the board, go to the bench. */
+  | { at: "case"; bugId: string; reopen: boolean }
   | { at: "log" };
 
 export function App() {
@@ -55,18 +56,26 @@ export function App() {
   const done = progress(learner);
   const rng = useMemo(() => mulberry32(Date.now() % 100000), []);
 
+  /*
+   * Opening a robot opens that robot, and nothing else happens on the way.
+   * Retests live in the session warm-up; putting one in front of a case the
+   * child chose spent their click on someone else's business.
+   *
+   * A robot whose bug is already known — cracked open by a failed retest, or
+   * left half-drilled — goes straight to the repair bench. Making them
+   * re-run a fourteen-suspect diagnosis to rediscover something the app
+   * already holds is busywork dressed as a game.
+   */
   function openCase(bugId: string) {
-    // A due retest is served first, hidden inside ordinary warm-up problems
-    // drawn from the current rung rather than from this robot's own band.
-    const warm = buildWarmup(learner, currentBand(learner), rng);
-    setScreen(warm ? { at: "warmup", data: warm, next: bugId } : { at: "case", bugId });
+    setScreen({ at: "case", bugId, reopen: getRecord(learner, bugId).state === "diagnosed" });
   }
 
-  function finishWarmup(results: RetestOutcome[], next: string) {
+  function finishWarmup(results: RetestOutcome[]) {
     let s = learner;
     for (const r of results) s = recordRetest(s, r.bugId, r.correct).state;
     setLearner(s);
-    setScreen(results.length > 0 ? { at: "outcome", results, next } : { at: "case", bugId: next });
+    // At most one, by construction — see buildWarmup.
+    setScreen(results[0] ? { at: "outcome", result: results[0] } : { at: "bay" });
   }
 
   return (
@@ -113,18 +122,16 @@ export function App() {
             const next = beginSession(learner);
             setLearner(next);
             /*
-             * Closing up advances the clock and NOTHING ELSE.
-             *
-             * This used to build a warm-up here too, which meant inventing a
-             * robot for it to lead into — the child had not picked one yet, so
-             * it named whichever was first on the bench and then walked them
-             * into that case. A warm-up belongs to a case the child chose. A
-             * due retest surfaces on its own the next time they open one.
+             * A day passes, and the next one opens with a warm-up — every
+             * time, whether or not a retest is riding in it. That is the
+             * point: a warm-up that only appeared when something was due
+             * would announce the probe by existing.
              */
             setScreen({
               at: "later",
               session: next.sessionIndex,
               waiting: BUGS.filter((b) => getRecord(next, b.id).state === "probation").length,
+              warm: buildWarmup(next, currentBand(next), rng),
             });
           }}
         />
@@ -134,34 +141,23 @@ export function App() {
         <Later
           session={screen.session}
           waiting={screen.waiting}
-          onContinue={() => setScreen({ at: "bay" })}
+          onContinue={() => setScreen({ at: "warmup", data: screen.warm })}
         />
       )}
 
       {screen.at === "warmup" && (
-        <Warmup
-          data={screen.data}
-          nextBugId={screen.next}
-          onDone={(results) => finishWarmup(results, screen.next)}
-        />
+        <Warmup data={screen.data} onDone={finishWarmup} />
       )}
 
       {screen.at === "outcome" && (
-        /*
-         * On to the robot the child actually picked. The retest rode along
-         * inside their warm-up; it was never what they came here to do, and
-         * dropping them back at the bench threw their choice away.
-         */
-        <Outcome
-          results={screen.results}
-          nextName={SKINS[screen.next]?.name ?? null}
-          onContinue={() => setScreen({ at: "case", bugId: screen.next })}
-        />
+        /* Back to the bench: what to work on next is the child's call. */
+        <Outcome result={screen.result} onContinue={() => setScreen({ at: "bay" })} />
       )}
 
       {screen.at === "case" && (
         <Case
           bugId={screen.bugId}
+          reopen={screen.reopen}
           streak={getRecord(learner, screen.bugId).streak}
           onFound={(id) => setLearner(recordDiagnosis(learner, id))}
           onPractice={(id, ok) => setLearner(recordPractice(learner, id, ok))}
@@ -170,6 +166,16 @@ export function App() {
       )}
 
       {screen.at === "log" && <Log learner={learner} onBack={() => setScreen({ at: "bay" })} />}
+
+      {/* ?peek — playtesting only, and never in a child's way. */}
+      {peekEnabled() && (
+        <Peek
+          learner={learner}
+          warm={
+            screen.at === "warmup" ? screen.data : screen.at === "later" ? screen.warm : null
+          }
+        />
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { Bot } from "../components/Bot.tsx";
  * The gap between sessions, made visible.
  *
  * The whole mastery rule rests on delay being real: a robot is not repaired
- * until its own problem comes back, unannounced, two sessions later. That gap
+ * until its own problem comes back, unannounced, a few sessions later. That gap
  * used to be invisible — a button called "Come back later" that immediately
  * dropped you into the next session's warm-up, which reads as arriving rather
  * than as leaving. One beat between the two makes the mechanic legible.

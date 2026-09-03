@@ -3,7 +3,7 @@
  *
  * The rule this module exists to enforce: a bug is retired only after
  * DELAYED, INTERLEAVED retesting. Three correct in a row looks fixed, but
- * two sessions later that bug's discriminating item quietly reappears mixed
+ * two or three sessions later that bug's discriminating item quietly reappears mixed
  * into new material. Pass it and the repair is permanent. Fail it and the
  * robot cracks back open.
  *
@@ -29,6 +29,11 @@ export type RepairRecord = {
   diagnosedInSession: number | null;
   /** Session in which the streak was achieved. The retest clock starts here. */
   probationSince: number | null;
+  /**
+   * The session from which this retest is allowed to appear. Stored rather
+   * than derived because it carries a jitter: see retestSession().
+   */
+  retestAfter: number | null;
   retestsPassed: number;
   /** Every time this robot cracked back open. Shown in the repair log. */
   retestsFailed: number;
@@ -48,6 +53,18 @@ export const STREAK_TO_PROBATION = 3;
 
 /** Sessions that must pass before the retest is allowed to appear. */
 export const RETEST_DELAY_SESSIONS = 2;
+
+/**
+ * Up to one extra session of slack, chosen per robot.
+ *
+ * Without it, three robots repaired in one sitting all come due in the same
+ * later sitting, and since only one retest rides in any warm-up the rest queue
+ * up behind it. Spreading them at the source keeps warm-ups looking alike.
+ */
+export const RETEST_JITTER_SESSIONS = 1;
+
+/** At most one retest rides in a warm-up. See buildWarmup for why. */
+export const RETESTS_PER_WARMUP = 1;
 
 export const STATE_VERSION = 1;
 

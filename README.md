@@ -306,14 +306,29 @@ is what sets up the mastery rule below.
 
 The rule below is not just modeled, it is playable end to end:
 
-**bench → case → bug named → practice → probation → (two sessions) → warm-up →
-repaired or cracked**
+**bench → case → bug named → practice → probation → (a few sessions) →
+warm-up → repaired or cracked**
 
 Nothing on the warm-up screen marks the retest. It is one of four quick
 problems, never first, drawn from the current rung of the ladder so the
 material around it really is new. No marker, no grouping, no styling, no copy —
 a probe the child can see coming is one they can prime for, and priming is
 exactly what this mechanic exists to rule out.
+
+Three properties do the hiding, and all three are load-bearing:
+
+- **A warm-up opens every session**, retest or not. One that appeared only when
+  something was due would announce the probe by existing.
+- **It is always the same length.** One that grew with the queue would announce
+  the probe by size.
+- **At most one retest rides in it.** With five robots due, five probes among
+  eight problems is not camouflage — the difficulty visibly jumps. The rest
+  keep their place in the queue; waiting past the minimum is stronger evidence
+  of retention, not weaker.
+
+The warm-up names no robot, and the shelf of robots waiting on a retest is
+inert: not clickable, no "due now", no relabeling. Letting a child walk up and
+take the probe deliberately would hand them the one thing the retest is asking.
 
 The failing outcome was the screen most at risk of going wrong, so it is worth
 naming what it does not do: no sad face, no red, no grade. Sprocket goes to
@@ -323,9 +338,15 @@ cracks back open is a puzzle reopening, not a punishment.
 
 The bench sorts robots by state and the shelf is the whole story: glitching
 robots keep their tell, robots waiting on a retest have lost the tell but are
-not signed off, repaired robots are plain. **Come back later** advances the
+not signed off, repaired robots are plain. **Close up for today** advances the
 session clock; it exists so the delayed retest can be seen inside a
-three-minute demo rather than two days, and it is labeled as what it is.
+three-minute demo rather than over a week, and the screen after it says so
+rather than pretending days really passed.
+
+Append `?peek` to the URL for a read-only readout of the schedule and of which
+warm-up problem is the probe. The mechanic is invisible by design, which makes
+it invisible to whoever is testing it — this is the window, and a child never
+meets it.
 
 ### Mastery: why a streak is not enough
 
@@ -343,11 +364,19 @@ unseen -> diagnosed -> probation -> repaired
               +-- failed retest: the robot cracks back open
 ```
 
-Two sessions after the streak, that bug's discriminating item quietly
-reappears **mixed into new material** — never first, and kept apart from other
-retests, because a probe presented in its own block is announced and the child
-primes the procedure. Pass it and the repair is permanent. Fail it and the
-robot cracks open, the streak is wiped, and the retest clock is cleared.
+Two sessions after the streak — plus up to one more, jittered per robot so a
+batch repaired in one sitting does not all come due in the same later one —
+that bug's discriminating item quietly reappears **mixed into new material**,
+never first and never alongside another retest, because a probe presented in
+its own block is announced and the child primes the procedure. Pass it and the
+repair is permanent. Fail it and the robot cracks open, the streak is wiped,
+and the retest clock is cleared.
+
+A cracked robot goes back to the *repair* loop, not the retest queue: probing
+the same gap again without teaching anything in between would only measure the
+same miss twice. It reopens at the bench with the working already on screen,
+because the bug is known and rediscovering it on a fourteen-suspect board is
+busywork dressed as a game.
 
 Three guards exist because without them the rule quietly degrades back into a
 streak counter, and each is pinned by a test:
@@ -436,7 +465,7 @@ across sessions, the band ladder within a skill.
 
 **"reward mastery"** — delayed interleaved retesting, not streaks. Three in a
 row measures short-term recall. A bug is retired only when its discriminating
-item quietly reappears two sessions later, mixed into new material.
+item quietly reappears two or three sessions later, mixed into new material.
 
 ---
 

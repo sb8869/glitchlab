@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { BUGS } from "../bugs/library.ts";
 import {
-  RETEST_DELAY_SESSIONS,
+  retestDue,
   STORAGE_KEY,
   STREAK_TO_PROBATION,
   beginSession,
@@ -54,11 +54,12 @@ test("the delayed retest still fires after a reload", () => {
   saveLearner(s, store);
 
   let reloaded = loadLearner(store);
-  for (let i = 0; i < RETEST_DELAY_SESSIONS; i++) {
+  for (let i = 0; i < 8 && !retestDue(reloaded, "frac_add_across"); i++) {
     reloaded = beginSession(reloaded);
     saveLearner(reloaded, store);
     reloaded = loadLearner(store);
   }
+  assert.equal(retestDue(reloaded, "frac_add_across"), true, "the schedule did not survive the reload");
   const { outcome, state } = recordRetest(reloaded, "frac_add_across", true);
   assert.equal(outcome, "repaired");
   assert.equal(getRecord(state, "frac_add_across").state, "repaired");
