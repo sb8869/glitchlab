@@ -25,6 +25,7 @@ function blank(bugId: string): RepairRecord {
     streak: 0,
     diagnosedInSession: null,
     probationSince: null,
+    drilledInSession: null,
     retestAfter: null,
     retestsPassed: 0,
     retestsFailed: 0,
@@ -98,6 +99,7 @@ export function recordPractice(
         state: "probation",
         streak,
         probationSince: state.sessionIndex,
+        drilledInSession: r.drilledInSession ?? state.sessionIndex,
         retestAfter: retestSession(bugId, state.sessionIndex),
       };
     }
@@ -252,20 +254,57 @@ export function hasBeenDrilled(state: LearnerState, bugId: string): boolean {
 }
 
 /**
- * A rung opens once every robot on the rung below has been found and drilled.
+ * The session by which every robot on this rung had been drilled, or null if
+ * some still have not been. Reading `drilledInSession` rather than
+ * `probationSince` keeps this monotonic across a crack.
+ */
+export function bandDrilledInSession(state: LearnerState, band: Band): number | null {
+  const ids = BUGS.filter((b) => b.band === band).map((b) => b.id);
+  let latest = 0;
+  for (const id of ids) {
+    if (!hasBeenDrilled(state, id)) return null;
+    const r = getRecord(state, id);
+    // A save written before this field existed: treat as long ago, so a
+    // returning child is never locked out of a rung they had already opened.
+    latest = Math.max(latest, r.drilledInSession ?? 0);
+  }
+  return ids.length > 0 ? latest : null;
+}
+
+/**
+ * A rung opens the session AFTER every robot on the rung below has been found
+ * and drilled.
  *
- * Drilled, not repaired. Gating on repair would mean waiting out a two-to-
- * three session retest delay for every robot in a band before the next one
- * opened — addition would not appear for five or more visits. Reaching
- * probation is the child's own work and takes one sitting; the retest is the
- * app's business, and holding the ladder hostage to it would punish them for
- * a clock they cannot see.
+ * Drilled, not repaired: gating on repair would hold each rung hostage to a
+ * two-to-three session retest delay for every robot beneath it, so addition
+ * would not appear for five or more visits. Reaching probation is the child's
+ * own work and takes one sitting.
+ *
+ * But not the SAME sitting. A child who blitzes place value in twenty minutes
+ * would otherwise roll straight into addition, and then subtraction, and
+ * finish the whole ladder in one go — which is cramming, and cramming is the
+ * thing this app spends its entire mastery rule refusing to reward. One rung
+ * per visit. Sleep on it.
+ *
+ * The gate is monotonic: `hasBeenDrilled` counts a robot that has since
+ * cracked open, and `drilledInSession` is never cleared, so a failed retest
+ * in place value can never re-lock addition underneath a child working there.
  */
 export function isBandOpen(state: LearnerState, band: Band): boolean {
   for (const earlier of BAND_ORDER) {
     if (earlier === band) return true;
-    const ids = BUGS.filter((b) => b.band === earlier).map((b) => b.id);
-    if (!ids.every((id) => hasBeenDrilled(state, id))) return false;
+    const drilled = bandDrilledInSession(state, earlier);
+    if (drilled === null || state.sessionIndex <= drilled) return false;
+  }
+  return true;
+}
+
+/** True when this rung is one good night's sleep away. Only the copy cares. */
+export function bandOpensNextSession(state: LearnerState, band: Band): boolean {
+  if (isBandOpen(state, band)) return false;
+  for (const earlier of BAND_ORDER) {
+    if (earlier === band) return true;
+    if (bandDrilledInSession(state, earlier) === null) return false;
   }
   return true;
 }

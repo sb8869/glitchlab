@@ -30,6 +30,12 @@ export type RepairRecord = {
   /** Session in which the streak was achieved. The retest clock starts here. */
   probationSince: number | null;
   /**
+   * Session in which this robot was FIRST drilled to probation. Never cleared,
+   * unlike probationSince — the band ladder reads it, and a robot that cracks
+   * open later must not roll a rung back up.
+   */
+  drilledInSession: number | null;
+  /**
    * The session from which this retest is allowed to appear. Stored rather
    * than derived because it carries a jitter: see retestSession().
    */

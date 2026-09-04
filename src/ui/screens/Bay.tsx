@@ -2,7 +2,13 @@ import { useState } from "react";
 
 import { BUGS } from "../../bugs/library.ts";
 import { BAND_ORDER } from "../../bugs/types.ts";
-import { bandBelow, getRecord, isBandOpen, type LearnerState } from "../../learner/index.ts";
+import {
+  bandBelow,
+  bandOpensNextSession,
+  getRecord,
+  isBandOpen,
+  type LearnerState,
+} from "../../learner/index.ts";
 import { SKINS } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
 
@@ -54,11 +60,12 @@ export function Bay({
    */
   const clear = unfixed.length === 0 && probation.length === 0 && repaired.length > 0;
   /*
-   * Every robot found and drilled, none repaired yet: there is genuinely
-   * nothing to open. Sprocket used to go on asking "who's on the bench today?"
-   * over a screen where nothing was clickable.
+   * Nothing left to open today. Either everything is on probation, or this
+   * rung is finished and the next one does not open until tomorrow. Sprocket
+   * used to go on asking "who's on the bench today?" over a screen where
+   * nothing was clickable.
    */
-  const waiting = unfixed.length === 0 && probation.length > 0;
+  const nothingToOpen = glitching.length === 0 && !clear;
   /*
    * Name the rung they are actually on, which is the one below the LOWEST
    * locked band — not below whichever locked robot happens to come first in
@@ -66,7 +73,10 @@ export function Bay({
    * wrong rung.
    */
   const lockedBands = BAND_ORDER.filter((b) => locked.some((id) => bandOf(id) === b));
-  const nextRung = lockedBands[0] ? bandBelow(lockedBands[0]) : null;
+  const nextBand = lockedBands[0] ?? null;
+  const nextRung = nextBand ? bandBelow(nextBand) : null;
+  /** The rung below is done; these are waiting on the calendar, not on work. */
+  const opensTomorrow = nextBand !== null && bandOpensNextSession(learner, nextBand);
 
   return (
     <main className="panel bay">
@@ -76,9 +86,11 @@ export function Bay({
           <div className="line">
             {clear
               ? "The bench is clear."
-              : waiting
-                ? "Every one of them is waiting on a retest."
-                : "Who's on the bench today?"}
+              : !nothingToOpen
+                ? "Who's on the bench today?"
+                : opensTomorrow
+                  ? "That's this lot sorted."
+                  : "Every one of them is waiting on a retest."}
           </div>
           <div className="quiet">
             {clear ? (
@@ -86,11 +98,18 @@ export function Bay({
                 All {repaired.length} of them came back days later and got it right anyway.
                 That is the part that counts.
               </>
-            ) : waiting ? (
-              <>
-                Nothing more to do today. Close up, and their problems come back round on
-                their own.
-              </>
+            ) : nothingToOpen ? (
+              opensTomorrow ? (
+                <>
+                  The {nextBand ? BAND_NAME[nextBand] : "next"} robots are next, and they
+                  open next time you come in. One rung a day.
+                </>
+              ) : (
+                <>
+                  Nothing more to do today. Close up, and their problems come back round on
+                  their own.
+                </>
+              )
             ) : (
               <>
                 {glitching.length} glitching. {probation.length} waiting for a retest.{" "}
@@ -151,7 +170,11 @@ export function Bay({
         <Shelf
           title="Not yet"
           hint={
-            nextRung ? `finish the ${BAND_NAME[nextRung]} robots first` : "coming up later"
+            opensTomorrow
+              ? "these open next time you come in"
+              : nextRung
+                ? `finish the ${BAND_NAME[nextRung]} robots first`
+                : "coming up later"
           }
           tone="mute"
           ids={locked}

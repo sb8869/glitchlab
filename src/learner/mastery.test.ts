@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { BUGS } from "../bugs/library.ts";
 import {
   RETEST_DELAY_SESSIONS,
+  bandOpensNextSession,
   isBandOpen,
   RETEST_JITTER_SESSIONS,
   STREAK_TO_PROBATION,
@@ -220,17 +221,37 @@ test("a rung stays shut until every robot on the rung below is found and drilled
     assert.equal(isBandOpen(s, second!), false, `${b.id} was not the last one`);
   }
   s = toProbation(s, below[below.length - 1]!.id);
-  assert.equal(isBandOpen(s, second!), true, "the whole rung below is drilled");
+  assert.equal(isBandOpen(s, second!), false, "not in the same sitting it was earned");
+  assert.equal(bandOpensNextSession(s, second!), true);
+  s = beginSession(s);
+  assert.equal(isBandOpen(s, second!), true, "the rung below was drilled last time");
+});
+
+test("finishing a rung does not open the next one in the same sitting", () => {
+  /*
+   * Otherwise a child who blitzes place value rolls straight into addition,
+   * then subtraction, and finishes the ladder in one go. That is cramming,
+   * and the whole mastery rule exists to refuse to reward it.
+   */
+  let s = beginSession(createLearner());
+  for (const band of BAND_ORDER.slice(0, -1)) {
+    for (const b of BUGS.filter((x) => x.band === band)) s = toProbation(s, b.id);
+  }
+  // Every rung's work is done, and still only the first two are reachable.
+  const open = BAND_ORDER.filter((b) => isBandOpen(s, b));
+  assert.deepEqual(open, [BAND_ORDER[0]], "one rung a sitting");
 });
 
 test("drilled, not repaired: the ladder does not wait on the retest clock", () => {
   /*
    * Gating on repair would hold the next rung hostage to a two-to-three
    * session delay per robot — addition would not open for five or more
-   * visits. Reaching probation is the child's own work and takes one sitting.
+   * visits. Reaching probation is the child's own work and takes one sitting;
+   * one more sitting is the whole wait.
    */
   let s = beginSession(createLearner());
   for (const b of BUGS.filter((x) => x.band === BAND_ORDER[0])) s = toProbation(s, b.id);
+  s = beginSession(s);
   assert.equal(progress(s).repaired, 0, "nothing is repaired yet");
   assert.equal(isBandOpen(s, BAND_ORDER[1]!), true);
 });
@@ -241,21 +262,34 @@ test("a robot cracking open never re-locks a rung the child is already on", () =
   let s = beginSession(createLearner());
   const below = BUGS.filter((b) => b.band === BAND_ORDER[0]);
   for (const b of below) s = toProbation(s, b.id);
-  assert.equal(isBandOpen(s, BAND_ORDER[1]!), true);
-
   s = untilDue(s, below[0]!.id);
+  assert.equal(isBandOpen(s, BAND_ORDER[1]!), true, "open before the crack");
   s = recordRetest(s, below[0]!.id, false).state;
   assert.equal(getRecord(s, below[0]!.id).state, "diagnosed", "it did crack");
   assert.equal(isBandOpen(s, BAND_ORDER[1]!), true, "the rung stayed open");
 });
 
-test("every rung opens eventually, in ladder order", () => {
+test("every rung opens eventually, one sitting apart, in ladder order", () => {
   let s = beginSession(createLearner());
   const opened: Band[] = [];
   for (const band of BAND_ORDER) {
     assert.equal(isBandOpen(s, band), true, `${band} should be open by now`);
     opened.push(band);
     for (const b of BUGS.filter((x) => x.band === band)) s = toProbation(s, b.id);
+    s = beginSession(s); // sleep on it
   }
   assert.deepEqual(opened, [...BAND_ORDER]);
+});
+
+test("a save written before the ladder existed does not lock anyone out", () => {
+  // drilledInSession is missing on older records; treat it as long ago.
+  let s = beginSession(createLearner());
+  for (const b of BUGS.filter((x) => x.band === BAND_ORDER[0])) s = toProbation(s, b.id);
+  const legacy: LearnerState = {
+    ...s,
+    records: Object.fromEntries(
+      Object.entries(s.records).map(([id, r]) => [id, { ...r, drilledInSession: null }]),
+    ),
+  };
+  assert.equal(isBandOpen(legacy, BAND_ORDER[1]!), true);
 });
