@@ -5,10 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Glitch Lab</title>
     <!--
-      The app icon itself, not a copy of it. A relative path lets Vite hash and
-      emit the real asset, so there is one source of truth for the artwork.
+      Icons live in public/ and are served from the site root, unhashed.
+      Pointing a single <link> at the hashed build asset was elegant and did
+      not work: browsers that do not take an SVG icon fall back to requesting
+      /favicon.ico, found nothing there, and used whatever was in their cache
+      for that origin — Vercel's own mark on the deployment, and a previous
+      project's on localhost. /favicon.ico has to exist.
+
+      public/favicon.svg is generated from src/ui/assets/app-icon.svg with the
+      palette variables resolved to their fallbacks and an explicit width and
+      height, because an icon is rasterized outside the page and can rely on
+      neither. The PNGs and the .ico are rendered from that. Do not hand-edit
+      any of them; change the master and regenerate.
     -->
-    <link rel="icon" type="image/svg+xml" href="./src/ui/assets/app-icon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />

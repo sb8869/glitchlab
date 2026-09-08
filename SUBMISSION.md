@@ -3,7 +3,7 @@
 **A K-5 math game that diagnoses *which* broken procedure a child is running,
 instead of deciding they are "bad at subtraction" and giving them easier sums.**
 
-Live link: **https://glitchlab-lyart.vercel.app** · Repo: this one · `npm run check` — typecheck + 140 tests
+Live link: **https://glitchlab-lyart.vercel.app** · Repo: this one · `npm run check` — typecheck + 143 tests
 
 No sign-in, nothing to configure. Progress lives in `localStorage`, so every visit
 starts a fresh lab at session 1. Append `?peek` for a read-only view of the

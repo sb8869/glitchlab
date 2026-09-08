@@ -28,10 +28,10 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 2. Inference engine (Bayes + information gain) | done, 15 tests |
 | 3. Simulation harness (500 students) | done, result below |
 | 4. Progression and mastery (ladder, probation, delayed retest, storage) | done, 45 tests |
-| 5. Game layer | full loop playable, 13 screens, 31 tests |
+| 5. Game layer | full loop playable, 13 screens, 34 tests |
 | 6. Remediation layer | done, 17 tests |
 
-`npm run check` — typecheck plus 140 tests, all green.
+`npm run check` — typecheck plus 143 tests, all green.
 
 ---
 
@@ -538,7 +538,7 @@ dressed up as a choice.
 
 ```bash
 npm install          # react + vite for the game; the engine itself has zero deps
-npm run check        # typecheck + 140 tests
+npm run check        # typecheck + 143 tests
 npm run simulate     # the evaluation numbers above
 npm run collisions   # per-item hypothesis fusion report
 npm run cast         # renders every character to out/contact-sheet.html

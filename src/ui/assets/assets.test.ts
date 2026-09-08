@@ -141,3 +141,36 @@ test("only Sprocket is teal, and Sprocket never shows a tell", () => {
   assert.match(svg, /<g id="bot-tell"><\/g>/, "the host must never look broken");
   assert.ok(svg.includes(SPROCKET.body));
 });
+
+/* --------------------------------------------------------------- favicons */
+
+test("the site icons exist and are served from the root", () => {
+  /*
+   * These shipped broken once. A single <link> pointed at the hashed build
+   * asset, browsers that do not accept an SVG icon fell back to requesting
+   * /favicon.ico, and with nothing there they used whatever their cache held
+   * for the origin — the host's own mark in one case, an unrelated project's
+   * in another. The .ico is the one that must exist.
+   */
+  const pub = join(DIR, "..", "..", "..", "public");
+  for (const f of ["favicon.ico", "favicon.svg", "favicon-32.png", "apple-touch-icon.png"]) {
+    const bytes = readFileSync(join(pub, f));
+    assert.ok(bytes.length > 500, `${f} is missing or empty`);
+  }
+});
+
+test("the favicon svg can be rasterized outside the page", () => {
+  // No page means no custom properties and no CSS box: an icon has to carry
+  // its own colors and its own intrinsic size or it renders as nothing.
+  const svg = readFileSync(join(DIR, "..", "..", "..", "public", "favicon.svg"), "utf8");
+  assert.equal(svg.includes("var("), false, "favicon.svg leans on a CSS variable");
+  assert.match(svg, /width="240"\s+height="240"/, "favicon.svg has no intrinsic size");
+});
+
+test("the favicon is the app icon, not a drawing of it", () => {
+  // Same shapes, palette resolved. A copy that drifts is worse than no copy.
+  const master = readFileSync(join(DIR, "app-icon.svg"), "utf8");
+  const icon = readFileSync(join(DIR, "..", "..", "..", "public", "favicon.svg"), "utf8");
+  const shapes = (s: string) => (s.match(/<(rect|circle|line|g)\b/g) ?? []).join(",");
+  assert.equal(shapes(icon), shapes(master), "favicon.svg has drifted from app-icon.svg");
+});
