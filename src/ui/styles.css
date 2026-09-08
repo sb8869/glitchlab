@@ -272,6 +272,52 @@ button:disabled { cursor: not-allowed; }
 .fracglyph .fg-n, .fracglyph .fg-d { font: 700 28px/1 var(--display); font-variant-numeric: tabular-nums; }
 .fracglyph .fg-bar { display: block; width: 100%; min-width: 34px; height: 3px; background: currentColor; border-radius: 2px; }
 
+/* ------------------------------------------------------------- guide ---- */
+.guide { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+/* Centered on every width: the wordmark is the hero and a left-aligned block
+   beside a 72px bot reads as lopsided rather than as a header. */
+.guide-head { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.guide-title { font: 700 42px/1 var(--display); margin: 0 0 6px; }
+.guide-hook { margin: 0 auto; font-size: 17px; font-weight: 700; color: var(--ink-soft); max-width: 48ch; }
+.guide-hook b { color: var(--ink); }
+
+/* The whole cast at a glance: "thirteen robots" lands faster than the words. */
+.cast {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 2px;
+  padding: 10px 14px; border-radius: 16px;
+  background: var(--paper); border: var(--stroke) dashed var(--ink-faint);
+}
+.guide-job { margin: 0; font-size: 17px; font-weight: 700; max-width: 52ch; }
+
+.steps-3 { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; width: 100%; grid-template-columns: repeat(3, 1fr); }
+.steps-3 li {
+  display: flex; gap: 12px; text-align: left; padding: 14px 16px;
+  background: var(--surface); border: 2.5px solid var(--ink);
+  border-radius: 14px; box-shadow: var(--hard-xs);
+}
+.steps-3 .step-no {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; font: 700 17px var(--display);
+  background: var(--tint-accent); border: 2.5px solid var(--ink); color: var(--on-accent);
+}
+.steps-3 b { display: block; font-size: 16px; margin-bottom: 3px; }
+.steps-3 span { font-size: 14px; font-weight: 600; color: var(--ink-soft); line-height: 1.45; }
+.guide .parent-note { text-align: left; }
+.guide-go { display: flex; justify-content: center; padding-top: 2px; }
+
+/* The overlay form, over the bench. */
+.scrim {
+  position: fixed; inset: 0; z-index: 60; overflow: auto;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 16px; background: rgba(20, 52, 63, .55);
+}
+.guide-modal { max-width: 900px; width: 100%; margin: auto; }
+
+@media (max-width: 720px) {
+  .steps-3 { grid-template-columns: 1fr; }
+  .guide-title { font-size: 32px; }
+}
+
 /* ------------------------------------------------------------- ?peek ---- */
 .peek {
   /*

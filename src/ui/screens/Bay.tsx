@@ -31,12 +31,14 @@ export function Bay({
   onOpen,
   onNextSession,
   onLog,
+  onHowToPlay,
   onStartOver,
 }: {
   learner: LearnerState;
   onOpen: (bugId: string) => void;
   onNextSession: () => void;
   onLog: () => void;
+  onHowToPlay: () => void;
   onStartOver: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
@@ -207,6 +209,9 @@ export function Bay({
       )}
 
       <div className="bay-actions">
+        <button className="btn sm ghost" onClick={onHowToPlay}>
+          How to play
+        </button>
         <button className="btn sm ghost" onClick={onLog}>
           Repair log
         </button>

@@ -3,6 +3,8 @@
 A K-5 math game that diagnoses **which broken procedure** a child is running,
 instead of lowering the difficulty when they answer wrong.
 
+**Play it: https://glitchlab-lyart.vercel.app**
+
 Children's arithmetic errors are not random. They are consistent buggy
 algorithms. A child running smaller-from-larger subtraction answers
 `71 - 28 = 57` every single time. Standard adaptive systems see "wrong answer,
@@ -26,7 +28,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 2. Inference engine (Bayes + information gain) | done, 15 tests |
 | 3. Simulation harness (500 students) | done, result below |
 | 4. Progression and mastery (ladder, probation, delayed retest, storage) | done, 45 tests |
-| 5. Game layer | full loop playable, 12 screens, 31 tests |
+| 5. Game layer | full loop playable, 13 screens, 31 tests |
 | 6. Remediation layer | done, 17 tests |
 
 `npm run check` — typecheck plus 140 tests, all green.

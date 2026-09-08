@@ -13,13 +13,6 @@ import { STATE_VERSION, type LearnerState, type RepairRecord } from "./types.ts"
 
 export const STORAGE_KEY = "glitchlab.learner.v1";
 
-export type StorageLike = {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-};
-
-/** In-memory fallback so the game still works with storage unavailable. */
 export function memoryStorage(): StorageLike {
   const map = new Map<string, string>();
   return {
@@ -38,6 +31,39 @@ function defaultStorage(): StorageLike | null {
   }
 }
 
+/**
+ * Whether this browser has been shown the how-to-play screen.
+ *
+ * Kept apart from LearnerState on purpose: that is the mastery record, with a
+ * version and a migration story, and "has read the instructions" is neither
+ * mastery nor worth versioning.
+ */
+export const GUIDE_KEY = "glitchlab.seen-guide.v1";
+
+export function hasSeenGuide(storage: StorageLike | null = defaultStorage()): boolean {
+  try {
+    return storage?.getItem(GUIDE_KEY) === "1";
+  } catch {
+    // Storage unavailable: show the guide. Better twice than never.
+    return false;
+  }
+}
+
+export function markGuideSeen(storage: StorageLike | null = defaultStorage()): void {
+  try {
+    storage?.setItem(GUIDE_KEY, "1");
+  } catch {
+    /* nothing to do */
+  }
+}
+
+export type StorageLike = {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+};
+
+/** In-memory fallback so the game still works with storage unavailable. */
 /**
  * Bring a stored state up to date with the current bug library, so adding a
  * bug later does not strand a returning child with a state that is missing it.
@@ -89,6 +115,8 @@ export function saveLearner(
 export function clearLearner(storage: StorageLike | null = defaultStorage()): void {
   try {
     storage?.removeItem(STORAGE_KEY);
+    // A new lab starts from the beginning, instructions included.
+    storage?.removeItem(GUIDE_KEY);
   } catch {
     /* nothing to do */
   }

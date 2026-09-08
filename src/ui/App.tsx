@@ -6,6 +6,8 @@ import {
   beginSession,
   clearLearner,
   createLearner,
+  hasSeenGuide,
+  markGuideSeen,
   currentBand,
   getRecord,
   loadLearner,
@@ -21,6 +23,7 @@ import { Peek, peekEnabled } from "./components/Peek.tsx";
 import { buildWarmup, type Warmup as WarmupData } from "./game/warmup.ts";
 import { Bay } from "./screens/Bay.tsx";
 import { Case } from "./screens/Case.tsx";
+import { Guide } from "./screens/Guide.tsx";
 import { Later } from "./screens/Later.tsx";
 import { Log } from "./screens/Log.tsx";
 import { Outcome, type RetestOutcome } from "./screens/Outcome.tsx";
@@ -30,6 +33,8 @@ const TOTAL = BUGS.length;
 
 type Screen =
   | { at: "bay" }
+  /** How to play. The first screen of a first session, and nothing after that. */
+  | { at: "guide" }
   /** The beat between sessions, carrying the warm-up that opens the next one. */
   | { at: "later"; session: number; waiting: number; warm: WarmupData }
   | { at: "warmup"; data: WarmupData }
@@ -48,7 +53,16 @@ export function App() {
     return loaded.sessionIndex === 0 ? beginSession(loaded) : loaded;
   });
   const [saved, setSaved] = useState(true);
-  const [screen, setScreen] = useState<Screen>({ at: "bay" });
+  /*
+   * A first-time player meets the instructions, not the bench. The bench on
+   * its own is thirteen robots and no verb — nothing on it says what the game
+   * is or what you are meant to do with them.
+   */
+  const [screen, setScreen] = useState<Screen>(() =>
+    hasSeenGuide() ? { at: "bay" } : { at: "guide" },
+  );
+  /** The same guide, reachable from the bench forever after. */
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const setLearner = useCallback((next: LearnerState) => {
     setLearnerState(next);
@@ -115,17 +129,30 @@ export function App() {
         </div>
       )}
 
+      {screen.at === "guide" && (
+        <Guide
+          mode="start"
+          onDone={() => {
+            markGuideSeen();
+            setScreen({ at: "bay" });
+          }}
+        />
+      )}
+
+      {guideOpen && <Guide mode="overlay" onDone={() => setGuideOpen(false)} />}
+
       {screen.at === "bay" && (
         <Bay
           learner={learner}
           onOpen={openCase}
+          onHowToPlay={() => setGuideOpen(true)}
           onLog={() => setScreen({ at: "log" })}
           onStartOver={() => {
             // Wipe and open a fresh lab. Only reachable from the all-repaired
             // screen, behind a confirm, so nothing in progress can be lost.
             clearLearner();
             setLearner(beginSession(createLearner()));
-            setScreen({ at: "bay" });
+            setScreen({ at: "guide" });
           }}
           onNextSession={() => {
             const next = beginSession(learner);
