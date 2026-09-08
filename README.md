@@ -212,7 +212,19 @@ outlines, hard offset shadows, index cards on pushpins, rubber stamps, twine
 — everything a seven-year-old already knows about finding the culprit.
 Designed in Claude Design against the brief in `design/UI-BRIEF.md`.
 
-Two things in it are load-bearing rather than decorative.
+Three things in it are load-bearing rather than decorative.
+
+**A suspect card is a number, not a sentence.** Each card leads with what that
+bug *writes* — `33 - 25 -> 12` — and its description stays hidden until the
+board is down to three suspects or the child taps the card. The sentences used
+to lead, which made the opening board ninety-five words of prose across
+thirteen cards: a reading test wearing a math game's clothes, on the one
+screen a five-year-old meets first. It is also the wrong way round. A bug here
+*is* an executable procedure, so the evidence a child should compare is the
+output, which they can check, rather than a description of it, which they can
+only take on trust. Tapping reveals; naming the culprit is a separate button
+on the revealed card, so a mis-tap on a thirteen-card grid is no longer a
+wrong accusation.
 
 **The board changes density with evidence.** Before any test, nothing is known
 and every suspect is equally likely, so the board is a plain roster with no

@@ -423,7 +423,10 @@ button:disabled { cursor: not-allowed; }
 /* Index cards pinned to cork. The tilt is per-card and deliberate. */
 .cards {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  align-content: start; padding-top: 6px; min-height: 0; overflow-y: auto;
+  /* align-items, not just align-content: an opened card grows, and without
+     this its row-mate stretched to match and sat there as a tall empty box. */
+  align-content: start; align-items: start;
+  padding-top: 6px; min-height: 0; overflow-y: auto;
 }
 .icard {
   position: relative; background: var(--card);
@@ -439,13 +442,55 @@ button:disabled { cursor: not-allowed; }
   background: var(--teal-deep); border: 2.5px solid var(--ink);
   box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25);
 }
-.icard .lab { font-size: 12.5px; font-weight: 800; line-height: 1.25; }
-.icard .sig { font-size: 11px; color: var(--ink-soft); margin-top: 4px; font-weight: 700; }
-.icard .sig b { color: var(--glitch); }
-.icard .sig b.ok { color: var(--good); }
+/*
+ * The signature IS the card. It leads at display size because a bug in this
+ * game is a procedure that writes a number, and the number is the evidence a
+ * child can actually check. The sentence used to lead, which made the opening
+ * board ninety-five words of prose across thirteen cards.
+ */
+.icard .sig {
+  font-family: var(--display); font-weight: 700;
+  font-size: 15px; line-height: 1.15; color: var(--ink);
+  display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap;
+}
+.icard .sig .arrow { color: var(--ink-faint); font-size: 13px; }
+.icard .sig b { color: var(--glitch); font-size: 17px; }
+
+/* The sentence, when the board can afford it: last few suspects, or a tap. */
+.icard .lab {
+  font-size: 11.5px; font-weight: 700; line-height: 1.25;
+  color: var(--ink-soft); margin-top: 6px;
+}
+/* The one card that has no number to lead with is a sentence, so it leads. */
+.icard.no-sig .lab { font-size: 13px; font-weight: 800; color: var(--ink); margin-top: 0; }
+
 .icard.pick { cursor: pointer; }
+/* A wordless "there is more on this card". */
+.icard.pick::after {
+  content: "\00B7\00B7\00B7"; position: absolute; right: 8px; bottom: 2px;
+  font-family: var(--display); font-size: 14px; font-weight: 700;
+  line-height: 1; color: var(--ink-faint);
+}
 .icard.pick:hover { transform: rotate(0deg) translateY(-3px); box-shadow: 4px 5px 0 rgba(20, 52, 63, .4); }
 .icard.pick:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.icard.open {
+  transform: rotate(0deg); border-color: var(--teal-deep);
+  box-shadow: 4px 5px 0 rgba(20, 52, 63, .4);
+}
+.icard.open::after { content: none; }
+
+/*
+ * Naming the culprit is a deliberate act. Tapping the card used to accuse,
+ * so a mis-tap on a thirteen-card grid was a wrong accusation.
+ */
+.accuse {
+  margin-top: 8px; width: 100%;
+  background: var(--accent); border: 2.5px solid var(--ink); border-radius: 7px;
+  padding: 5px 8px; font-family: var(--display); font-size: 12.5px; font-weight: 700;
+  box-shadow: var(--hard-xs);
+}
+.accuse:hover { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
+.accuse:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
 /*
  * Headroom. The design fits 14 cards exactly, with the last row sitting on
@@ -453,9 +498,10 @@ button:disabled { cursor: not-allowed; }
  * tighten so the full board always has slack, and the grid can scroll as a
  * last resort.
  */
-.cards.dense .icard { padding: 9px 8px 6px; }
-.cards.dense .icard .lab { font-size: 11.5px; line-height: 1.2; }
-.cards.dense .icard .sig { font-size: 10px; margin-top: 3px; }
+.cards.dense .icard { padding: 10px 9px 8px; }
+.cards.dense .icard .sig { font-size: 14px; }
+.cards.dense .icard .sig b { font-size: 16px; }
+.cards.dense .icard .lab { font-size: 11px; line-height: 1.2; margin-top: 5px; }
 .cards.dense { gap: 8px; }
 
 .meter { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
@@ -498,7 +544,7 @@ button:disabled { cursor: not-allowed; }
 }
 .tie .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
 .tie .pair .icard { padding: 14px 10px 10px; }
-.tie .pair .icard .lab { font-size: 13px; }
+.tie .pair .icard .lab { font-size: 13px; font-weight: 800; color: var(--ink); }
 .tie-note {
   margin-top: 10px; background: var(--tint-accent); border: 2.5px solid var(--ink);
   border-radius: 10px; padding: 9px 12px; font-size: 13px; font-weight: 800; line-height: 1.35;
