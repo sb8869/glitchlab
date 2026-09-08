@@ -11,9 +11,27 @@ import { Bot, Sprocket } from "../components/Bot.tsx";
  * thirteen robots, no premise, no verb, and nothing saying what any of it was
  * for. A judge with three minutes and a child with none would both bounce.
  *
- * The three steps are the actual loop, in the order it happens, in the words
- * the game itself uses. The grown-up note is folded away, because the thing
- * that makes this app unusual is not something a seven-year-old needs to read.
+ * It then overcorrected into a hundred and thirteen words, which for the
+ * five-year-old end of K-5 is a reading comprehension test standing between
+ * them and a math game. A playtester put it plainly: no one reads that many
+ * directions, least of all a child.
+ *
+ * So it is down to twenty-eight, and the test applied to every sentence cut
+ * was: does the game already say this, at the moment it matters? It did, every
+ * time, in almost the same words —
+ *
+ *   "Some questions tell you far more than others"  -> Sprocket, on the screen
+ *      where the child picks a test tool.
+ *   "You need the right answer to spot what the robot got wrong"  -> Sprocket,
+ *      verbatim, on the screen where they answer.
+ *   "come back another day, its problem turns up again later"  -> the end of
+ *      the repair drills, where probation is actually explained.
+ *
+ * Front-loading all three taught nothing and cost the only attention a child
+ * arrives with. What is left is the premise, the cast, and three verbs.
+ *
+ * The grown-up note is untouched and still folded away: it is for the adult in
+ * the room, and it is the one reader who came here to read.
  */
 export function Guide({
   mode,
@@ -33,8 +51,7 @@ export function Guide({
         <div>
           <h1 className="guide-title">Glitch Lab</h1>
           <p className="guide-hook">
-            Thirteen robots do math. Every one of them gets it wrong — and each one gets it
-            wrong the <b>same way every time</b>.
+            Thirteen robots. Each one gets math wrong the <b>same way every time</b>.
           </p>
         </div>
       </div>
@@ -45,41 +62,20 @@ export function Guide({
         ))}
       </div>
 
-      <p className="guide-job">
-        Your job is to work out <b>exactly</b> what each one does wrong. Not that it is bad
-        at math — what it actually does.
-      </p>
-
+      {/* Three verbs, in the order they happen. No sub-lines: a sentence
+          explaining a step is a step nobody read. */}
       <ol className="steps-3">
         <li>
           <span className="step-no">1</span>
-          <div>
-            <b>Give it a problem.</b>
-            <span>
-              Pick a robot, then pick which problem to test it with. Some questions tell you
-              far more than others — working out which is half the game.
-            </span>
-          </div>
+          <b>Give a robot a problem.</b>
         </li>
         <li>
           <span className="step-no">2</span>
-          <div>
-            <b>Answer it yourself.</b>
-            <span>
-              You need the right answer to spot what the robot got wrong. Suspects get
-              crossed off the board as you go.
-            </span>
-          </div>
+          <b>Answer it yourself.</b>
         </li>
         <li>
           <span className="step-no">3</span>
-          <div>
-            <b>Name the bug, then fix it.</b>
-            <span>
-              Say what the robot does wrong, teach it, and come back another day — its
-              problem turns up again later, and only then is the repair real.
-            </span>
-          </div>
+          <b>Say what it does wrong, then fix it.</b>
         </li>
       </ol>
 

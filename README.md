@@ -255,6 +255,18 @@ The design fit exactly fourteen cards with the last row on the bottom edge, so
 one more bug would have broken it. Above ten suspects the cards tighten
 (`.cards.dense`) and the board keeps slack at any count.
 
+The same word budget governs the how-to-play screen, which is **28 words**:
+the premise, the cast, and three verbs. It was 113, and the test applied to
+every sentence cut was whether the game already says it at the moment it
+matters. It did, every time, nearly verbatim — "some questions tell you far
+more than others" is Sprocket's line on the screen where a test is picked,
+"you need the right answer to spot what the robot got wrong" is his line on
+the screen where the child answers, and the delayed-retest rule is explained
+at the end of the repair drills, where it applies. Front-loading all three
+taught nothing and spent the only attention a five-year-old arrives with. The
+grown-up note below it is untouched at 97 words and still folded away: it is
+written for the one reader who came here to read.
+
 ### The game: mutual diagnosis
 
 The child debugs the robot while the engine debugs the child, and the same
