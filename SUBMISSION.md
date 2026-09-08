@@ -3,7 +3,7 @@
 **A K-5 math game that diagnoses *which* broken procedure a child is running,
 instead of deciding they are "bad at subtraction" and giving them easier sums.**
 
-Live link: _(to come)_ · Repo: this one · `npm run check` — typecheck + 128 tests
+Live link: _(to come)_ · Repo: this one · `npm run check` — typecheck + 140 tests
 
 ---
 
@@ -96,12 +96,24 @@ Rewarding a streak measures short-term recall. Glitch Lab measures retention:
 - Two sessions later — plus up to one more, jittered per robot so a batch
   repaired together does not come due together — that robot's own discriminating
   problem is **slipped back into ordinary warm-up work**, unannounced and
-  interleaved. At most one probe rides in any warm-up, and warm-ups are the same
-  length every session, so neither their presence nor their size says anything.
-  Pass it and the repair is permanent. Fail and the robot cracks back open.
+  interleaved. Pass it and the repair is permanent. Fail and the robot cracks
+  back open, and returns to the *repair* loop rather than the retest queue:
+  probing the same gap again without teaching anything in between would only
+  measure the same miss twice.
+- **The probe cannot be picked out.** A warm-up opens every session whether or
+  not one is riding, is always the same four problems long, carries at most one
+  probe, and is built as two matched pairs — so the retest always has a twin of
+  its own band and kind and is never the odd one out. Material comes from the
+  bands the child has worked in rather than the probe's band, because a mix that
+  shifted when a probe was present would itself be the tell. The shelf of robots
+  waiting on a retest is inert: it never says which one is due, and it cannot be
+  clicked.
 - Progress is a **repair log**, not XP: thirteen competencies, finite, so a child
   can see the end of the game from the first session. The band ladder runs place
-  value → addition regrouping → subtraction regrouping → fractions as numbers.
+  value → addition regrouping → subtraction regrouping → fractions as numbers,
+  and a rung opens the session *after* every robot on the rung below has been
+  found and drilled. One rung a visit — a child who blitzes place value in
+  twenty minutes does not get to cram the whole curriculum into an afternoon.
 
 ## Problems are generated, not curated
 
@@ -142,6 +154,12 @@ itself, because "we wrote it" is not a proof that the arithmetic is right.
 2. **The child is never shown a suspect list filtered by knowledge they don't
    have.** The offered tests are not screened using the robot's actual bug, even
    though that would make the demo more reliable.
+3. **A wrong answer is never waved through.** Anywhere a child answers —
+   diagnosis, drills, warm-ups — a miss shows the working with the result left
+   blank and asks again; a second miss fills it in so nobody is stuck. What gets
+   *scored* is their first answer, because being shown how it is done and then
+   writing it in is not the same as knowing it, and a retest passable with help
+   would not be measuring retention.
 
 ## Scope
 

@@ -22,14 +22,14 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 
 | Layer | State |
 | --- | --- |
-| 1. Bug library (13 executable misconceptions) | done, 19 tests |
+| 1. Bug library (13 executable misconceptions) + problem generation | done, 32 tests |
 | 2. Inference engine (Bayes + information gain) | done, 15 tests |
 | 3. Simulation harness (500 students) | done, result below |
-| 4. Progression and mastery | done, 29 tests |
-| 5. Game layer | full mastery loop playable, 8 screens |
-| 6. Remediation layer | done, 13 tests |
+| 4. Progression and mastery (ladder, probation, delayed retest, storage) | done, 45 tests |
+| 5. Game layer | full loop playable, 12 screens, 31 tests |
+| 6. Remediation layer | done, 17 tests |
 
-`npm run check` — typecheck plus 128 tests, all green.
+`npm run check` — typecheck plus 140 tests, all green.
 
 ---
 
@@ -242,9 +242,9 @@ The suspect board opens as the *whole* library: the robot could have any of
 the thirteen bugs. One wrong answer rules out most of them at once, because
 every hypothesis predicting the correct answer is contradicted immediately.
 
-The flagship case runs **14 suspects -> 2 -> 1 in two tests**, and the middle
-step is the best thing in the demo. After `40 - 27` the board does not narrow
-to the answer — it deadlocks on exactly two suspects at 48.5% each:
+The case worth watching for runs **14 suspects -> 2 -> 1 in two tests**, and
+the middle step is the best thing in the demo. After `40 - 27` the board does
+not narrow to the answer — it deadlocks on exactly two suspects at 48.5% each:
 
     48.5%  Always takes the small number from the big one
     48.5%  Thinks zero take away something is that something
@@ -310,12 +310,11 @@ The rule below is not just modeled, it is playable end to end:
 warm-up → repaired or cracked**
 
 Nothing on the warm-up screen marks the retest. It is one of four quick
-problems, never first, drawn from the current rung of the ladder so the
-material around it really is new. No marker, no grouping, no styling, no copy —
-a probe the child can see coming is one they can prime for, and priming is
-exactly what this mechanic exists to rule out.
+problems, never first. No marker, no grouping, no styling, no copy — a probe
+the child can see coming is one they can prime for, and priming is exactly what
+this mechanic exists to rule out.
 
-Three properties do the hiding, and all three are load-bearing:
+Four properties do the hiding, and all four are load-bearing:
 
 - **A warm-up opens every session**, retest or not. One that appeared only when
   something was due would announce the probe by existing.
@@ -325,6 +324,14 @@ Three properties do the hiding, and all three are load-bearing:
   eight problems is not camouflage — the difficulty visibly jumps. The rest
   keep their place in the queue; waiting past the minimum is stronger evidence
   of retention, not weaker.
+- **The probe is never the odd one out.** A warm-up is two matched pairs — two
+  problems of one band and kind, two of another — so a retest always has a
+  twin. Material is drawn from every band the child has worked in, not from the
+  current rung, and not from the probe's band. Warm-ups used to come from the
+  current rung alone, which early on is place value, so a subtraction retest
+  was the only subtraction on the page and could be pointed at by a child who
+  had learned no arithmetic at all. A mix that shifted to the probe's band only
+  when a probe was present would be the same tell wearing a different hat.
 
 The warm-up names no robot, and the shelf of robots waiting on a retest is
 inert: not clickable, no "due now", no relabeling. Letting a child walk up and
@@ -518,37 +525,50 @@ No auth, no accounts, no leaderboard, no backend, no server-side persistence.
 Those cost days and prove nothing. Progression is `localStorage`.
 
 Four bands spanning grade 2 through grade 5 (see the standards table above),
-not every topic in K-5. Multiplication misconceptions are well documented, but
-a fifth band buys breadth instead of depth, and depth is what the subtraction
-band demonstrates. Stated deliberately rather than silently.
+not every topic in K-5. The missing multiplication and division band is a time
+decision, not a principled one — those misconceptions are well documented and
+would fit this engine as well as any band here. Said plainly rather than
+dressed up as a choice.
 
 ---
 
 ## Running it
 
 ```bash
-npm install          # typescript + @types/node, dev only — the engine has zero deps
-npm run check        # typecheck + 128 tests
+npm install          # react + vite for the game; the engine itself has zero deps
+npm run check        # typecheck + 140 tests
 npm run simulate     # the evaluation numbers above
 npm run collisions   # per-item hypothesis fusion report
 npm run cast         # renders every character to out/contact-sheet.html
 npm run mastery      # walks through the delayed interleaved retest
 npm run dev          # the game
 npm run build        # production build into dist/
+npm run preview      # serve that build
 ```
 
-Node 22+, native type stripping, no build step. Relative imports end in `.ts`.
+Node 22+. Everything under `src/bugs`, `src/engine`, `src/learner` and
+`scripts/` runs directly under Node's native type stripping with no build step
+— which is why the tests, the simulation and the collision report need no
+toolchain at all. Only the React front end is bundled, by Vite. Relative
+imports end in `.ts` throughout so both paths resolve the same files.
+
+Append `?peek` to the URL for a read-only readout of the retest schedule and of
+which warm-up problem is the probe. The mechanic is invisible by design, which
+makes it invisible to whoever is testing it too.
 
 ---
 
 ## What is next
 
-1. **Fraction robots** — four of the thirteen are unreachable in play: the
-   answer box is numeric-only, so a child cannot type `17/24`, and compare
-   items need two buttons rather than a text field.
-2. **Deployment** — the live link half of the deliverable.
-3. **The end states** — the all-repaired screen and the empty repair log are
-   designed and not yet built.
+1. **A fifth band: multiplication and division.** Long multiplication and long
+   division are the richest documented source of buggy procedures in the
+   literature — dropping the zero placeholder in the second partial product,
+   shifting the wrong way, mishandling the bring-down — and they would fit this
+   engine almost unchanged, being column procedures with carries and place
+   shifts. Left out for time, not for principle.
+2. **Real children.** Everything below the interface is validated against
+   synthetic students generated from the same bug library the engine reasons
+   over. That tests the inference; it cannot test the library.
 
 ### Known limitations
 
