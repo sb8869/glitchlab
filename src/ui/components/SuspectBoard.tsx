@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { bugById, predict } from "../../bugs/library.ts";
 import { itemLabel } from "../../bugs/procedures.ts";
@@ -14,6 +14,37 @@ const TILT = [-1.2, 1, 0.8, -0.9, 1.3, -1.1, 0.6, -1.4, 1.1, -0.7, 0.9, -1.2, 1.
  * three is not a reading test; reading thirteen is.
  */
 const NAME_THEM_AT = 3;
+
+/*
+ * Ruling a suspect out is the payoff of the whole loop, and it used to happen
+ * as a re-render: the cards were simply not there any more. So the board now
+ * holds the departing cards in place, stamps them, and sweeps them off toward
+ * the pile before the count moves.
+ *
+ * Everything downstream of the sweep — the counter, the meters, the sentences
+ * on the last few suspects, the pile itself — waits for it to land. Otherwise
+ * the board would be telling the child "three left" while eleven cards were
+ * still visibly on it.
+ */
+const STAMP_MS = 340;
+const SWEEP_MS = 480;
+const STAGGER_MS = 45;
+/** A cascade, not a queue. Eleven cards at 45ms each would be a wait. */
+const STAGGER_CAP = 320;
+
+/*
+ * The width at which the layout stacks and the board stops being sticky —
+ * the same breakpoint the stylesheet uses. Below it the board is a long way
+ * down the page.
+ */
+const STACKED_AT = 940;
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
+  );
+}
 
 /**
  * What this bug writes when it fires. The signature is what makes the board
@@ -58,6 +89,8 @@ function Card({
   named,
   lead,
   open,
+  leaving,
+  delay = 0,
   onToggle,
   onAccuse,
   override,
@@ -70,6 +103,10 @@ function Card({
   named: boolean;
   lead?: boolean;
   open: boolean;
+  /** Ruled out by the test just run, and on its way off the board. */
+  leaving?: boolean;
+  /** Stagger, so a mass elimination cascades rather than blinks. */
+  delay?: number;
   onToggle?: (id: string) => void;
   onAccuse?: (id: string) => void;
   /** Force the example shown, so tied cards can prove they agree. */
@@ -88,12 +125,13 @@ function Card({
    * instead put a one-tap accuse button on the no-signature card from the
    * very first test, while thirteen other suspects were still standing.
    */
-  const canOpen = Boolean(onToggle) && !named;
-  const showAccuse = Boolean(onAccuse) && (named || open);
+  const canOpen = Boolean(onToggle) && !named && !leaving;
+  const showAccuse = Boolean(onAccuse) && (named || open) && !leaving;
   return (
     <div
-      className={`icard${lead ? " lead" : ""}${open ? " open" : ""}${canOpen ? " pick" : ""}${sig ? "" : " no-sig"}`}
-      style={{ ["--tilt" as string]: `${tilt}deg` }}
+      className={`icard${lead ? " lead" : ""}${open ? " open" : ""}${canOpen ? " pick" : ""}${sig ? "" : " no-sig"}${leaving ? " gone" : ""}`}
+      style={{ ["--tilt" as string]: `${tilt}deg`, ["--sweep-delay" as string]: `${delay}ms` }}
+      aria-hidden={leaving || undefined}
       onClick={canOpen ? () => onToggle!(id) : undefined}
       role={canOpen ? "button" : undefined}
       tabIndex={canOpen ? 0 : undefined}
@@ -116,6 +154,11 @@ function Card({
           : undefined
       }
     >
+      {leaving && (
+        <span className="ko" aria-hidden="true">
+          ✗
+        </span>
+      )}
       {sig && (
         <div className="sig">
           <span className="prob">{sig.problem}</span>
@@ -149,12 +192,26 @@ function Card({
 
 export function SuspectBoard({
   posterior,
+  hold = false,
   onAccuse,
   tieHint,
   tieAnswer,
   tieProblem,
 }: {
   posterior: Posterior;
+  /*
+   * Keep the board as it is, even though the posterior has already moved.
+   *
+   * The engine narrows the moment the child picks a test tool, because the
+   * evidence is the robot's answer and that arrives immediately. But the
+   * child's attention at that moment is on the answer box, and Sprocket does
+   * not say "that test ruled out two suspects" until they have answered — so
+   * the reward played to nobody and the narration arrived over a board that
+   * had gone quiet three seconds earlier. Held through the answer, the sweep
+   * lands on the sentence that describes it, and the child's own answer is
+   * what releases it.
+   */
+  hold?: boolean;
   onAccuse?: (bugId: string) => void;
   /** The problem that would separate two tied suspects. */
   tieHint?: string | null;
@@ -173,9 +230,112 @@ export function SuspectBoard({
   const live = all.filter((s) => s.p >= RULED_OUT);
   const out = all.filter((s) => s.p < RULED_OUT);
   const tied = isTied(posterior);
-  const settled = live.length === 1;
   const leader = live[0];
-  const named = live.length <= NAME_THEM_AT;
+
+  /*
+   * The cards actually on the board, in the order they were pinned up.
+   *
+   * This is deliberately NOT the posterior's order, which sorts by
+   * probability: re-sorting after every test made the surviving cards jump
+   * around the grid, so a child tracking one suspect lost it. The leader is
+   * marked by its border instead, which says the same thing without moving
+   * anything. Cards leave this list only after they have been swept off.
+   */
+  const [slots, setSlots] = useState<string[]>(() => live.map((sp) => sp.id));
+  const [leaving, setLeaving] = useState<ReadonlySet<string>>(() => new Set());
+  /*
+   * The headline count, which releases WITH the sweep rather than after it.
+   *
+   * It cannot simply read the posterior: while the board is held the posterior
+   * has already narrowed, and the header would give the answer away before the
+   * child has answered. It cannot wait for the cards to land either — the
+   * compare screen puts "1 suspect left" in a chip a few inches away, and for
+   * the length of the sweep the board would be flatly contradicting it.
+   *
+   * So the number drops the instant the stamps start falling. The cards are
+   * then the reason for the number rather than a second opinion on it.
+   */
+  const [revealed, setRevealed] = useState(live.length);
+  const boardRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (hold) return;
+    const next = liveSuspects(posterior)
+      .filter((sp) => sp.p >= RULED_OUT)
+      .map((sp) => sp.id);
+    const alive = new Set(next);
+    const departing = slots.filter((id) => !alive.has(id));
+    // A suspect can only ever leave. Anything arriving means a different case
+    // is on the board, so there is nothing to sweep — just repin it.
+    if (next.some((id) => !slots.includes(id)) || slots.length === 0) {
+      setSlots(next);
+      setLeaving(new Set());
+      setRevealed(next.length);
+      return;
+    }
+    if (departing.length === 0) {
+      setRevealed(next.length);
+      return;
+    }
+    if (prefersReducedMotion()) {
+      setSlots(next);
+      setRevealed(next.length);
+      return;
+    }
+    setLeaving(new Set(departing));
+    setRevealed(next.length);
+    /*
+     * On a phone the board is below the answer tray, and focusing the input
+     * has already scrolled the page past it — so thirteen cards were being
+     * stamped and swept two-thirds of the way down a document nobody was
+     * looking at. A reward nobody sees is not a reward. Only when the layout
+     * has stacked, only when the board is genuinely out of the way, and only
+     * far enough to bring it fully on screen.
+     */
+    const el = boardRef.current;
+    if (el && window.innerWidth <= STACKED_AT) {
+      const top = el.getBoundingClientRect().top;
+      if (top > window.innerHeight * 0.45) {
+        el.scrollIntoView({
+          behavior: prefersReducedMotion() ? "auto" : "smooth",
+          block: "nearest",
+        });
+      }
+    }
+    const settle =
+      STAMP_MS + SWEEP_MS + Math.min((departing.length - 1) * STAGGER_MS, STAGGER_CAP);
+    const t = setTimeout(() => {
+      setSlots(next);
+      setLeaving(new Set());
+    }, settle);
+    return () => clearTimeout(t);
+    // A new posterior, or the release of the hold, starts a sweep; `slots` is
+    // read, never watched.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posterior, hold]);
+
+  const sweeping = leaving.size > 0;
+  /*
+   * Two clocks, deliberately. The headline — the count and "found it" — runs
+   * on `revealed`, which moves when the sweep begins, so it agrees with the
+   * chip the compare screen puts a few inches away. Everything belonging to
+   * the cards runs on `slots`, which moves when the sweep lands.
+   *
+   * The sentences are emphatically on the second clock. Hanging them off the
+   * headline instead meant that the moment the count fell to one, all fourteen
+   * cards — the thirteen still being stamped included — put their sentences
+   * back on, and the board turned into the wall of prose it exists to avoid.
+   */
+  const shown = revealed;
+  const settled = shown === 1;
+  const named = slots.length <= NAME_THEM_AT;
+  /*
+   * Ruled out AND off the board. Keyed on what is pinned up rather than on
+   * what is currently in flight, so a suspect is never listed in the pile
+   * while its card is still hanging there — which is what would happen for
+   * the whole time the board is held.
+   */
+  const filed = out.filter((sp) => !slots.includes(sp.id));
   const toggle = (id: string) => setOpen((cur) => (cur === id ? null : id));
 
   /*
@@ -184,19 +344,22 @@ export function SuspectBoard({
    * so the board opens as a plain roster and grows meters once it knows
    * something.
    */
-  const hasEvidence = out.length > 0;
+  const hasEvidence = filed.length > 0;
 
   return (
-    <section className="board" aria-label="Suspect board">
+    <section className="board" aria-label="Suspect board" ref={boardRef}>
       <div className="board-head">
         <span className="board-tag">SUSPECT BOARD</span>
         <span className="board-count">
-          <b>{live.length}</b>
+          {/* Keyed on the value so the punch replays every time it drops. */}
+          <b key={shown} className="tick">
+            {shown}
+          </b>
           <span>{settled ? "found it" : "still possible"}</span>
         </span>
       </div>
 
-      {tied ? (
+      {tied && !sweeping ? (
         <div className="tie">
           <span className="pin-l" />
           <span className="pin-r" />
@@ -231,25 +394,35 @@ export function SuspectBoard({
           </div>
         </div>
       ) : (
-        <div className={`cards${live.length > 10 ? " dense" : ""}`}>
-          {live.map((s, i) => (
-            <Card
-              key={s.id}
-              id={s.id}
-              p={s.p}
-              tilt={TILT[i % TILT.length] ?? 0}
-              showMeter={hasEvidence}
-              named={named}
-              lead={hasEvidence && leader?.id === s.id && s.p >= 0.5}
-              open={open === s.id}
-              onToggle={toggle}
-              onAccuse={onAccuse}
-            />
-          ))}
+        <div
+          className={`cards${slots.length > 10 ? " dense" : ""}${sweeping ? " sweeping" : ""}`}
+        >
+          {slots.map((id, i) => {
+            const go = leaving.has(id);
+            // Stagger by position among the departing, not among all cards,
+            // so the cascade has no gaps in it.
+            const order = slots.filter((x) => leaving.has(x)).indexOf(id);
+            return (
+              <Card
+                key={id}
+                id={id}
+                p={posterior[id] ?? 0}
+                tilt={TILT[i % TILT.length] ?? 0}
+                showMeter={hasEvidence && !go}
+                named={named}
+                lead={hasEvidence && leader?.id === id && (posterior[id] ?? 0) >= 0.5}
+                open={open === id}
+                leaving={go}
+                delay={go ? Math.min(order * STAGGER_MS, STAGGER_CAP) : 0}
+                onToggle={toggle}
+                onAccuse={onAccuse}
+              />
+            );
+          })}
         </div>
       )}
 
-      {out.length > 0 && (
+      {filed.length > 0 && (
         <div className="pile">
           <ul>
             {/*
@@ -257,15 +430,18 @@ export function SuspectBoard({
               says "not this" about the same thing the board says "maybe this"
               about, and it costs four words instead of thirty.
             */}
-            {out.slice(0, 4).map((s) => {
+            {filed.slice(0, 4).map((s) => {
               const sig = signature(s.id);
               return (
                 <li key={s.id}>{sig ? `${sig.problem} → ${sig.answer}` : labelFor(s.id)}</li>
               );
             })}
           </ul>
-          {out.length > 4 && <span className="more">+{out.length - 4} more</span>}
-          <span className="stamp">RULED OUT · {out.length}</span>
+          {filed.length > 4 && <span className="more">+{filed.length - 4} more</span>}
+          {/* Keyed so the stamp lands again each time the pile grows. */}
+          <span className="stamp" key={filed.length}>
+            RULED OUT · {filed.length}
+          </span>
         </div>
       )}
     </section>

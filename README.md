@@ -212,7 +212,7 @@ outlines, hard offset shadows, index cards on pushpins, rubber stamps, twine
 — everything a seven-year-old already knows about finding the culprit.
 Designed in Claude Design against the brief in `design/UI-BRIEF.md`.
 
-Three things in it are load-bearing rather than decorative.
+Four things in it are load-bearing rather than decorative.
 
 **A suspect card is a number, not a sentence.** Each card leads with what that
 bug *writes* — `33 - 25 -> 12` — and its description stays hidden until the
@@ -230,6 +230,20 @@ wrong accusation.
 and every suspect is equally likely, so the board is a plain roster with no
 meters — thirteen identical bars would be noise dressed as data. Meters appear
 only once a test has ruled something out.
+
+**Ruling a suspect out is staged, not repainted.** Narrowing thirteen
+possibilities to one is the most exciting thing a child does here, and it used
+to happen as a re-render: the cards were simply not there any more. Now each
+eliminated card is stamped where it hangs and swept off toward the pile, in a
+staggered cascade, and the whole board runs on two clocks. The headline count
+moves when the sweep *begins*, because the compare screen puts "1 suspect
+left" in a chip a few inches away and the board must not contradict it. The
+cards, their sentences and the pile move when the sweep *lands*, because a
+suspect must never be listed as filed while its card is visibly still pinned
+up. The board is also held through the answer: the engine narrows the moment
+a test tool is picked, but the child is looking at the answer box then, so the
+sweep waits for their answer and lands on the sentence that describes it.
+Everything is off under `prefers-reduced-motion`, which costs no information.
 
 **The tie hangs two cards from one twine at the same height**, with an `=`
 tag between them, rather than stacking them in a list. Two things at equal

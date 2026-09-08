@@ -558,6 +558,13 @@ export function Case({
       {phase !== "reopen" && (
         <SuspectBoard
           posterior={game.posterior}
+          /*
+           * The board narrows when the child answers, not when they pick the
+           * tool. Same evidence either way — the robot's answer — but this is
+           * the moment they are looking at it, and the moment Sprocket says
+           * what it cost the suspects.
+           */
+          hold={phase === "answer"}
           onAccuse={phase === "compare" ? accuse : undefined}
           tieHint={tieHint}
           tieAnswer={last?.robotAnswer ?? null}

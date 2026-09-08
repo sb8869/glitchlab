@@ -6,3 +6,6 @@ out/
 .env.local
 *.local
 .vite/
+
+# Files delivered into the chat by Claude; not part of the project.
+Claude outputs/

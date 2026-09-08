@@ -180,7 +180,7 @@ nothing.
 | --- | --- | --- |
 | 0:00–0:20 | `40 - 27 = 27` written by a child | "This isn't a guess. It's a procedure — take the small digit from the big one, every column. Most math apps see one wrong answer and lower the difficulty." |
 | 0:20–0:50 | the bench, open Rivet, the glitch tell | "Fourteen suspects. The child picks which problem to test the robot with." |
-| 0:50–1:30 | pick a test, watch the board go 14 → 4 → 1 | "That's not animation. Each answer is a Bayesian update over fourteen executable procedures, and the next problem is chosen by expected information gain. 4.35 questions on average instead of 9.73." |
+| 0:50–1:30 | pick a test, watch the board go 14 → 4 → 1 | "Those cards are not falling on a timer. Each answer is a Bayesian update over fourteen executable procedures, and the next problem is chosen by expected information gain. 4.35 questions on average instead of 9.73." |
 | 1:30–1:50 | the tie card: two suspects, same answer | "These two are structurally confounded — on every item where both are live they write the identical answer. The game says so instead of guessing." |
 | 1:50–2:15 | CASE CLOSED, the two workings side by side | "Naming the bug isn't teaching it. Here's where the two procedures part company, computed, not written by a model." |
 | 2:15–2:30 | a later session, the retest hidden in the warm-up | "It was never marked fixed on a streak. A few sessions later its own problem turns up inside ordinary work — unlabelled, never first, one per visit. Pass it then and it's repaired." |
