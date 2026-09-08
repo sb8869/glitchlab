@@ -565,6 +565,17 @@ export function Case({
            * what it cost the suspects.
            */
           hold={phase === "answer"}
+          /*
+           * The problem just run. Opening a card puts it to that suspect and
+           * shows what it would have written — which for a card still on the
+           * board is the same thing the robot wrote, and that is exactly why
+           * it is still on the board.
+           */
+          probe={
+            phase === "compare" || phase === "found"
+              ? last && { item: last.item, robotAnswer: last.robotAnswer, name: skin.name }
+              : null
+          }
           onAccuse={phase === "compare" ? accuse : undefined}
           tieHint={tieHint}
           tieAnswer={last?.robotAnswer ?? null}

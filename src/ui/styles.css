@@ -476,15 +476,23 @@ button:disabled { cursor: not-allowed; }
 /* The one card that has no number to lead with is a sentence, so it leads. */
 .icard.no-sig .lab { font-size: 13px; font-weight: 800; color: var(--ink); margin-top: 0; }
 
-.icard.pick { cursor: pointer; }
+/*
+ * Named "openable" rather than "pick": .pick is the fraction picker's row
+ * layout (display:flex, gap:14px) and a suspect card wearing it was silently
+ * laid out as a flex row, which squeezed the probability meter down to a
+ * four-pixel stub. Nothing threw and no test noticed — it only showed up in a
+ * screenshot, and only on cards that were tappable, which the settled board
+ * never is.
+ */
+.icard.openable { cursor: pointer; }
 /* A wordless "there is more on this card". */
-.icard.pick::after {
+.icard.openable::after {
   content: "\00B7\00B7\00B7"; position: absolute; right: 8px; bottom: 2px;
   font-family: var(--display); font-size: 14px; font-weight: 700;
   line-height: 1; color: var(--ink-faint);
 }
-.icard.pick:hover { transform: rotate(0deg) translateY(-3px); box-shadow: 4px 5px 0 rgba(20, 52, 63, .4); }
-.icard.pick:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.icard.openable:hover { transform: rotate(0deg) translateY(-3px); box-shadow: 4px 5px 0 rgba(20, 52, 63, .4); }
+.icard.openable:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .icard.open {
   transform: rotate(0deg); border-color: var(--teal-deep);
   box-shadow: 4px 5px 0 rgba(20, 52, 63, .4);
@@ -503,6 +511,32 @@ button:disabled { cursor: not-allowed; }
 }
 .accuse:hover { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
 .accuse:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+/*
+ * The opened card answering the problem just run. Green when it agrees with
+ * the robot, which is every card still on the board and the reason each one is
+ * still there. Red is a guard against a mis-tuned elimination threshold rather
+ * than a state the game reaches.
+ */
+.icard .probe {
+  margin-top: 8px; padding: 6px 8px; border-radius: 7px;
+  border: 2px solid var(--good); background: var(--tint-good);
+  display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap;
+  font-family: var(--display); font-size: 12.5px; font-weight: 700;
+}
+.icard .probe.diff { border-color: var(--glitch); background: var(--tint-glitch); }
+.icard .probe .pq { color: var(--ink-soft); }
+.icard .probe .arrow { color: var(--ink-faint); }
+.icard .probe b { font-size: 14px; }
+.icard .probe.same b { color: var(--on-good); }
+.icard .probe.diff b { color: var(--on-glitch); }
+.icard .probe .verdict {
+  flex-basis: 100%; font-family: var(--body); font-size: 11px; font-weight: 800;
+}
+.icard .probe.same .verdict { color: var(--on-good); }
+.icard .probe.diff .verdict { color: var(--on-glitch); }
+.cards.dense .icard .probe { font-size: 11.5px; padding: 5px 7px; }
+.cards.dense .icard .probe b { font-size: 13px; }
 
 /* ------------------------------------------------- ruling a suspect out */
 

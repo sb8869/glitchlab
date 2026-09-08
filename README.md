@@ -212,7 +212,7 @@ outlines, hard offset shadows, index cards on pushpins, rubber stamps, twine
 — everything a seven-year-old already knows about finding the culprit.
 Designed in Claude Design against the brief in `design/UI-BRIEF.md`.
 
-Four things in it are load-bearing rather than decorative.
+Five things in it are load-bearing rather than decorative.
 
 **A suspect card is a number, not a sentence.** Each card leads with what that
 bug *writes* — `33 - 25 -> 12` — and its description stays hidden until the
@@ -250,6 +250,18 @@ tag between them, rather than stacking them in a list. Two things at equal
 height read as tied; two things stacked always read faintly as ranked. That
 distinction matters because the deadlock is the clearest evidence the engine
 is reasoning rather than sorting.
+
+**A card can be asked the last question.** Opening a suspect shows what *it*
+would have written on the problem just run, beside what the robot actually
+wrote. For anything still on the board the two always match, and that is the
+content rather than a flaw: it is the reason that card survived, checkable one
+card at a time in numbers rather than asserted in a sentence. It earns its
+place on a test that ruled nothing out — Sprocket says "some tests don't", and
+the cards can then be asked why: every one of them writes what the robot
+wrote. It is deliberately about the problem already run and never about the
+tests on offer, because showing what each suspect would say to an unplayed
+test would turn choosing a good question — the numeracy work this game exists
+for — into reading answers off the board.
 
 The design fit exactly fourteen cards with the last row on the bottom edge, so
 one more bug would have broken it. Above ten suspects the cards tighten

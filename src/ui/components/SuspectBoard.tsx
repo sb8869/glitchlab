@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { bugById, predict } from "../../bugs/library.ts";
 import { itemLabel } from "../../bugs/procedures.ts";
 import { CORRECT, type Posterior } from "../../engine/infer.ts";
+import type { Item } from "../../bugs/types.ts";
 import { generateForBug } from "../../bugs/generate.ts";
 import { RULED_OUT, isTied, liveSuspects } from "../game/session.ts";
 
@@ -65,6 +66,12 @@ function signature(bugId: string): { problem: string; answer: string } | null {
   return { problem: itemLabel(item), answer: predict(bugId, item) };
 }
 
+/**
+ * The problem the robot was last tested on, so a card can be asked what IT
+ * would have written there.
+ */
+export type Probe = { item: Item; robotAnswer: string; name: string };
+
 function labelFor(bugId: string): string {
   return bugId === CORRECT ? "Nothing — it does math fine" : bugById(bugId).childLabel;
 }
@@ -91,6 +98,7 @@ function Card({
   open,
   leaving,
   delay = 0,
+  probe,
   onToggle,
   onAccuse,
   override,
@@ -107,6 +115,8 @@ function Card({
   leaving?: boolean;
   /** Stagger, so a mass elimination cascades rather than blinks. */
   delay?: number;
+  /** The last problem run, so an opened card can answer it in its own voice. */
+  probe?: Probe | null;
   onToggle?: (id: string) => void;
   onAccuse?: (id: string) => void;
   /** Force the example shown, so tied cards can prove they agree. */
@@ -125,11 +135,16 @@ function Card({
    * instead put a one-tap accuse button on the no-signature card from the
    * very first test, while thirteen other suspects were still standing.
    */
-  const canOpen = Boolean(onToggle) && !named && !leaving;
+  /*
+   * Once there is a problem to put to it, a card stays tappable even after the
+   * board has named its suspects — the last two standing are exactly where
+   * "why is this one still up?" is worth asking.
+   */
+  const canOpen = Boolean(onToggle) && (!named || Boolean(probe)) && !leaving;
   const showAccuse = Boolean(onAccuse) && (named || open) && !leaving;
   return (
     <div
-      className={`icard${lead ? " lead" : ""}${open ? " open" : ""}${canOpen ? " pick" : ""}${sig ? "" : " no-sig"}${leaving ? " gone" : ""}`}
+      className={`icard${lead ? " lead" : ""}${open ? " open" : ""}${canOpen ? " openable" : ""}${sig ? "" : " no-sig"}${leaving ? " gone" : ""}`}
       style={{ ["--tilt" as string]: `${tilt}deg`, ["--sweep-delay" as string]: `${delay}ms` }}
       aria-hidden={leaving || undefined}
       onClick={canOpen ? () => onToggle!(id) : undefined}
@@ -167,6 +182,41 @@ function Card({
         </div>
       )}
       {showLab && <div className="lab">{labelFor(id)}</div>}
+      {/*
+        What this suspect would have written on the problem just run, next to
+        what the robot actually wrote.
+
+        For a card still on the board the answer is, in practice, always "the
+        same" — a suspect that disagreed with the robot falls below the
+        elimination threshold on that very test. That is the point rather than
+        a shortcoming: it is the reason this card is still up, in numbers the
+        child can check themselves. It matters most on a test that ruled
+        nothing out, where Sprocket says only "some tests don't" and the cards
+        can be asked why: because every one of them writes what the robot
+        wrote.
+
+        The disagreeing branch is therefore a guard, not an expected state. It
+        is kept because the threshold is a tuning constant and a card that
+        quietly claimed agreement it did not have would be worse than a rare
+        red box.
+
+        It is deliberately about the problem ALREADY RUN, never about the tests
+        on offer. Showing what each suspect would say to an unplayed test would
+        turn choosing a good question — the numeracy work this game exists for
+        — into reading the answers off the board.
+      */}
+      {open && probe && !leaving && (
+        <div className={`probe${predict(id, probe.item) === probe.robotAnswer ? " same" : " diff"}`}>
+          <span className="pq">{itemLabel(probe.item)}</span>
+          <span className="arrow">→</span>
+          <b>{predict(id, probe.item)}</b>
+          <span className="verdict">
+            {predict(id, probe.item) === probe.robotAnswer
+              ? `same as ${probe.name}`
+              : `not ${probe.name}`}
+          </span>
+        </div>
+      )}
       {showMeter && (
         <div className="meter">
           <div className="track">
@@ -193,6 +243,7 @@ function Card({
 export function SuspectBoard({
   posterior,
   hold = false,
+  probe = null,
   onAccuse,
   tieHint,
   tieAnswer,
@@ -212,6 +263,8 @@ export function SuspectBoard({
    * what releases it.
    */
   hold?: boolean;
+  /** The problem just run, so an opened card can answer it in its own voice. */
+  probe?: Probe | null;
   onAccuse?: (bugId: string) => void;
   /** The problem that would separate two tied suspects. */
   tieHint?: string | null;
@@ -414,6 +467,7 @@ export function SuspectBoard({
                 open={open === id}
                 leaving={go}
                 delay={go ? Math.min(order * STAGGER_MS, STAGGER_CAP) : 0}
+                probe={probe}
                 onToggle={toggle}
                 onAccuse={onAccuse}
               />
