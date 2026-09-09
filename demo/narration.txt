@@ -1,0 +1,12 @@
+When a child writes forty minus twenty-seven equals twenty-seven, that is not a guess. It is a procedure — take the smaller digit from the larger, in every column. Perfectly consistent, and wrong every time.
+Glitch Lab gives that procedure a body. Thirteen robots, each running one broken method, the same way every time.
+The board opens as the whole library — fourteen suspects, because it could be any of them. Each card shows what that bug writes, not a sentence describing it. Evidence a five-year-old can check.
+The child picks which problem to test with — some rule out far more than others. Then they answer it themselves. You cannot spot a deviation from a rule you do not know.
+Tap a suspect that is still standing, and it writes what the robot wrote.
+None of that is a model. Every card is a Bayesian update over fourteen executable procedures, and the next question is chosen by expected information gain. Ninety-eight point eight percent identification, in four questions instead of nearly ten.
+Naming the bug is not teaching it. So the app works both procedures side by side — the robot's way and the right way — computed by the engine, not written by a language model.
+Three correct in a row, and the robot still is not fixed. A streak measures short-term recall and nothing else.
+So it goes back on the bench, and days have to pass before anything counts.
+Then its own problem comes back, buried inside an ordinary warm-up. Unlabelled. Never first. One per visit. There is nothing to see coming, and passing it then is the only thing that marks a repair.
+And when two suspects are genuinely indistinguishable, the app says so. These two write the identical answer on every problem where both are live. No amount of repeating it, or making it harder, will separate them — so the game names the one problem that will.
+A wrong answer is not a score to lower. It is a procedure to find. Glitch Lab runs entirely on the device, with no model anywhere in the inference path.

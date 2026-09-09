@@ -175,42 +175,48 @@ nothing.
 
 ---
 
-## Demo script (2:30)
+## The demo film
 
-**Recording note.** The ladder gate means a fresh lab opens with the three
-place-value robots only; each rung opens the session *after* the one below is
-finished. Everything from 0:00 to 2:05 below is reachable in **session 1 of a
-clean browser profile**. The tie card at 2:05 is not: both structurally
-confounded pairs live in the subtraction and fraction bands, so it needs a walk
-to **session 3** (three place-value robots, then two addition robots, closing up
-between). Record the long session, cut to 2:30. `?peek` shows the retest
-schedule while you record — useful for knowing when the probe is coming, and
-it is read-only.
+**`demo/glitchlab-demo.mp4` — 2:22, 1080p.** Twelve scenes composed in Remotion
+over real footage of the real app: a scripted Playwright session driving the
+built site, recorded at native 1080p. Nothing is mocked or sped up, and the
+session-3 state the later beats need was *played* rather than fabricated — the
+ladder gate is real and there is no shortcut past it. `demo/README.md` says
+exactly which takes were re-shot and why.
 
-| time | on screen | said |
+The film is silent by design. `demo/NARRATION.md` is the script with per-scene
+timings and `demo/narration.txt` is the same words with no markup, one block
+per line, for reading aloud or for TTS. On-screen captions are short labels
+rather than a transcript, so a voice track has somewhere to live.
+
+| time | on screen | the line |
 | --- | --- | --- |
-| 0:00–0:15 | `40 - 27 = 27` written by a child | "This is not a guess and it is not a gap. It is a procedure — take the small digit from the big one, in every column — and it is perfectly consistent. Most apps see one wrong answer and lower the difficulty." |
-| 0:15–0:30 | the start screen, then the bench | "Twenty-eight words, then thirteen robots. Every one of them gets math wrong the same way every time, and the child's job is to work out exactly how." |
-| 0:30–0:45 | open a robot; it drops onto the bench; the suspect board | "Fourteen suspects — the whole library, because it could be any of them. Each card is what that bug *writes*, not a description of it: the evidence a five-year-old can actually check." |
-| 0:45–1:05 | pick a test; the robot shudders and answers; the child answers | "The child picks which problem to test it with. Some questions rule out far more than others, and working out which is the numeracy work. Then they answer it themselves — you cannot spot a deviation from a rule you do not know." |
-| 1:05–1:25 | **the collapse**: cards stamped, swept into the pile, counter rolling down | "That is not a transition. Every card is a Bayesian update over fourteen executable procedures, and the next problem is chosen by expected information gain. On the evaluation bank: 98.8% identification in 4.35 questions, against 79.0% in 9.73 for a difficulty-ladder baseline. McNemar chi-square 89.92." |
-| 1:25–1:45 | tap a surviving card | "Ask any suspect still standing what it would have written on that problem. It writes what the robot wrote — which is exactly why it is still up there. On a test that ruled nothing out, all thirteen say the same thing, and the child can see why the question was wasted." |
-| 1:45–2:05 | CASE CLOSED, the two workings side by side, then the drills and the repair | "Naming the bug is not teaching it. Here is where the two procedures part company, computed rather than written by a model. Three in a row, and the robot still is not fixed." |
-| 2:05–2:20 | *(session 3)* the tie: two cards on one twine, `= TIED` | "These two are structurally confounded — on every item where both are live they write the identical answer. No amount of repeating it or making it harder separates them. The game says so, and names the problem that does." |
-| 2:20–2:30 | a few days later, the warm-up, the retest hidden inside it | "It was never marked fixed on a streak. A few sessions later its own problem turns up inside ordinary work — unlabelled, never first, one per visit. Pass it then and it is repaired." |
+| 0:00 | title, and `40 − 27 = 27` | not a guess — a procedure |
+| 0:13 | the bench | thirteen robots, each wrong the same way every time |
+| 0:23 | the suspect board | each card is what that bug *writes* |
+| 0:36 | one test, and the board collapses | fourteen suspects down to one |
+| 0:48 | a surviving card, opened | it writes exactly what the robot wrote |
+| 0:54 | the measured numbers | 98.8% in 4.35 questions, no model in the path |
+| 1:08 | CASE CLOSED, both procedures side by side | naming the bug is not teaching it |
+| 1:21 | three drills, then the repair | a streak measures short-term recall |
+| 1:31 | the days passing | nothing is marked fixed on a streak |
+| 1:38 | the warm-up | unlabelled, never first, one per visit |
+| 1:52 | `= TIED` | two suspects that write the same answer |
+| 2:09 | close | a wrong answer is a procedure to find |
 
-### If you have thirty seconds more
+### Re-shooting it yourself
 
-The bench clearing is the end of the game and the only moment in the app that
-is deliberately loud: thirteen robots repaired, every repair held through a
-delayed retest days later, a full-window burst and the one fanfare. It fires
-once per lab — reaching it on camera means finishing all thirteen, so it is a
-separate take.
+The ladder gate means a fresh lab opens with the three place-value robots only,
+and each rung opens the session *after* the one below is finished. Everything
+up to 1:52 is reachable in session 1 of a clean profile. The tie is not: both
+structurally confounded pairs live in the subtraction and fraction bands, so it
+needs a walk to session 3 — three place-value robots, then two addition robots,
+closing up between. `?peek` shows the retest schedule while you record, and is
+read-only.
 
 ### What not to say
 
-Do not call the numbers a simulation or the animation a transition. The cards
-falling are a posterior, the counter is the count of hypotheses still above the
-elimination floor, and every figure quoted above was measured on the 37-item
-evaluation bank in `src/bugs/bank.ts`, which has not been edited since the
-numbers were taken.
+Do not call the numbers a simulation or the collapse a transition. The cards
+falling are a posterior, the counter is the number of hypotheses still above
+the elimination floor, and every figure was measured on the 37-item evaluation
+bank in `src/bugs/bank.ts`, which has not been edited since.
