@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { BUGS } from "../../bugs/library.ts";
 import { BAND_ORDER } from "../../bugs/types.ts";
@@ -9,10 +9,31 @@ import {
   isBandOpen,
   type LearnerState,
 } from "../../learner/index.ts";
+import { play } from "../audio.ts";
 import { SKINS } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
 
 const bandOf = (bugId: string) => BUGS.find((b) => b.id === bugId)!.band;
+
+/**
+ * The burst for an empty bench, computed once and deterministically.
+ *
+ * Not random: a celebration that looks different on every render is a nuisance
+ * to verify and nobody sees it twice anyway. Each piece carries its landing
+ * point, spin and colour as custom properties, so there are no generated class
+ * names for the stylesheet to have to know about.
+ */
+const CONFETTI = Array.from({ length: 52 }, (_, i) => {
+  const angle = (i / 52) * Math.PI * 2;
+  const reach = 200 + (i % 5) * 95;
+  return {
+    x: Math.round(Math.cos(angle) * reach),
+    y: Math.round(Math.sin(angle) * reach * 0.6) - 60,
+    spin: (i % 7) * 120 + 180,
+    delay: (i % 8) * 45,
+    tint: ["var(--teal)", "var(--accent)", "var(--glitch)", "var(--good)"][i % 4]!,
+  };
+});
 
 const BAND_NAME: Record<string, string> = {
   place_value: "place value",
@@ -61,6 +82,11 @@ export function Bay({
    * "Glitching · 0" shelf reads as a bug, not as a finish.
    */
   const clear = unfixed.length === 0 && probation.length === 0 && repaired.length > 0;
+  // Once, when the bench first comes up empty — including on a reload, which
+  // is the right time to hear it too.
+  useEffect(() => {
+    if (clear) play("cleared");
+  }, [clear]);
   /*
    * Nothing left to open today. Either everything is on probation, or this
    * rung is finished and the next one does not open until tomorrow. Sprocket
@@ -124,6 +150,21 @@ export function Bay({
 
       {clear && (
         <section className="allclear">
+          <div className="confetti" aria-hidden="true">
+            {CONFETTI.map((p, i) => (
+              <span
+                key={i}
+                className="bit"
+                style={{
+                  ["--x" as string]: `${p.x}px`,
+                  ["--y" as string]: `${p.y}px`,
+                  ["--spin" as string]: `${p.spin}deg`,
+                  ["--tint" as string]: p.tint,
+                  animationDelay: `${p.delay}ms`,
+                }}
+              />
+            ))}
+          </div>
           <span className="clear-stamp">EVERY ROBOT REPAIRED</span>
           <p className="log-sub">
             Not one of them was signed off on a streak. Each one sat on the bench for a

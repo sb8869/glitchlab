@@ -7,14 +7,19 @@
  * no Web Audio, which is why every entry point tolerates a null context
  * instead of guarding at the call sites.
  *
- * There are exactly three, and each marks a thing that already happened in the
- * repair log — a suspect ruled out, a case closed, a robot repaired. None of
- * them fires on a correct answer, for the same reason nothing else in this
- * game rewards one: the diagnosis is fed by honest wrong answers, and a child
- * who learns that being right makes a happy noise starts guessing safe.
+ * There are exactly four, and each marks a thing that already happened in the
+ * repair log — a suspect ruled out, a case closed, a robot repaired, and the
+ * bench finally empty. None of them fires on a correct answer, for the same
+ * reason nothing else in this game rewards one: the diagnosis is fed by honest
+ * wrong answers, and a child who learns that being right makes a happy noise
+ * starts guessing safe.
+ *
+ * The fourth is deliberately longer than the others. Thirteen robots repaired
+ * and every one of them held through a delayed retest is the end of the game,
+ * it happens once, and it should not sound like closing a case.
  */
 
-export type Cue = "eliminate" | "closed" | "repaired";
+export type Cue = "eliminate" | "closed" | "repaired" | "cleared";
 
 const MUTE_KEY = "glitchlab.muted.v1";
 
@@ -127,11 +132,25 @@ export function play(cue: Cue, count = 1): void {
       [660, 990, 1320].forEach((f, i) =>
         tone(c, { freq: f, at: now + i * 0.085, dur: 0.16, type: "triangle", peak: 0.13 }),
       );
-    } else {
-      // Repaired: the only sound in the game that resolves upward and rings.
+    } else if (cue === "repaired") {
+      // Repaired: the only short cue that resolves upward and rings.
       [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
         tone(c, { freq: f, at: now + i * 0.075, dur: i === 3 ? 0.5 : 0.2, peak: 0.14 }),
       );
+    } else {
+      // Cleared: the whole bench. A fanfare, once per lab.
+      const fanfare = [523.25, 659.25, 783.99, 1046.5, 1318.51];
+      fanfare.forEach((f, i) =>
+        tone(c, {
+          freq: f,
+          at: now + i * 0.11,
+          dur: i === fanfare.length - 1 ? 1.1 : 0.26,
+          type: "triangle",
+          peak: 0.13,
+        }),
+      );
+      // A fifth above the held note, so the last chord is not a single voice.
+      tone(c, { freq: 1567.98, at: now + 0.44, dur: 1.1, peak: 0.07 });
     }
   } catch {
     // A cue that will not play is never a reason to interrupt the game.

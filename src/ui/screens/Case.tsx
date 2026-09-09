@@ -83,6 +83,13 @@ export function Case({
   const [practiceMiss, setPracticeMiss] = useState(false);
   /** Misses on the CURRENT drill, so the repair drills teach the same way. */
   const [drillMisses, setDrillMisses] = useState(0);
+  /*
+   * The robot glitching in reaction to the test just put to it. This is the
+   * moment the child is looking straight at it — the robot has just produced a
+   * wrong answer — and until now the only thing that happened was a number
+   * appearing in a box beside it.
+   */
+  const [zap, setZap] = useState(false);
 
   const skin = SKINS[bugId]!;
   const bug = bugById(bugId);
@@ -109,6 +116,16 @@ export function Case({
   useEffect(() => {
     if (done) play("repaired");
   }, [done]);
+
+  // One shudder per test run. Keyed on the count rather than on the phase,
+  // because the phase changes again when the child answers and the robot has
+  // no business glitching a second time over the same answer.
+  useEffect(() => {
+    if (game.history.length === 0) return;
+    setZap(true);
+    const t = setTimeout(() => setZap(false), 620);
+    return () => clearTimeout(t);
+  }, [game.history.length]);
   const eyes: EyeState =
     phase === "found" || done
       ? "celebrating"
@@ -277,7 +294,12 @@ export function Case({
         </div>
 
         {phase !== "found" && phase !== "practice" && phase !== "reopen" && (
-          <div className="bench-wrap">
+          <div
+            /* The class rides the WRAPPER: the spotlight is a sibling that
+               comes before the robot in the markup, and CSS cannot select
+               backwards from the robot to it. */
+            className={`bench-wrap${zap ? " zapped" : ""}`}
+          >
             <div className="spotlight" />
             <div className="patient">
               <Bot character={bugId} eyes="idle" showTell size={260} />

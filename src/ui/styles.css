@@ -397,16 +397,59 @@ button:disabled { cursor: not-allowed; }
 
 /* ------------------------------------------------------------ all clear -- */
 .allclear {
+  position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  text-align: center; padding: 22px 20px;
+  text-align: center; padding: 30px 20px 26px;
   background: var(--tint-good); border: var(--stroke) solid var(--good);
   border-radius: 16px; box-shadow: var(--hard-xs);
 }
+
+/*
+ * The end of the game, and until now it was a sentence. Thirteen robots, every
+ * one of them repaired and every repair held through a delayed retest days
+ * later — the one moment in this app that has earned being loud, and the one
+ * that happens exactly once.
+ */
+@keyframes confetti-fly {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(.4); opacity: 0; }
+  10%  { opacity: 1; }
+  100% {
+    transform: translate(var(--x), calc(var(--y) + 660px)) rotate(var(--spin)) scale(1);
+    opacity: 0;
+  }
+}
+/*
+ * Fixed, not absolute: contained inside the panel the burst was a cramped
+ * puff behind a paragraph. This is the end of the game and it gets the whole
+ * window. Under the scrim (60) and the peek panel (50) so it can never sit on
+ * top of something a person needs to read or click.
+ */
+.confetti { position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; }
+.confetti .bit {
+  position: absolute; left: 50%; top: 34%;
+  width: 10px; height: 17px; border-radius: 2px;
+  background: var(--tint); border: 2px solid var(--ink);
+  animation: confetti-fly 2.2s cubic-bezier(.12, .62, .3, 1) backwards;
+}
+
+@keyframes clear-stamp-land {
+  0%   { opacity: 0; transform: rotate(-16deg) scale(3); }
+  58%  { opacity: 1; transform: rotate(-2deg) scale(.9); }
+  80%  { transform: rotate(-2deg) scale(1.07); }
+  100% { opacity: 1; transform: rotate(-2deg) scale(1); }
+}
 /* Named apart from .stamp, which is absolutely positioned for the pile. */
 .allclear .clear-stamp {
+  position: relative;
   font: 700 20px/1 var(--display); letter-spacing: .1em; color: var(--on-good);
   border: 3px solid var(--good); border-radius: 8px; padding: 8px 16px;
   transform: rotate(-2deg);
+  animation: clear-stamp-land .55s cubic-bezier(.2, 1.35, .4, 1) .12s backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti { display: none; }
+  .allclear .clear-stamp { animation: none; }
 }
 .allclear .log-sub { max-width: 56ch; }
 
@@ -709,6 +752,75 @@ button:disabled { cursor: not-allowed; }
   animation: stamp-land .3s cubic-bezier(.2, 1.4, .4, 1) backwards;
 }
 .pile .more { position: absolute; left: 12px; bottom: 10px; font-size: 11px; font-weight: 800; color: var(--ink-soft); }
+
+/* ------------------------------------------------- arriving and reacting -- */
+
+/*
+ * The robot arrives rather than appearing. The animation sits on the .bot span
+ * INSIDE .patient, not on .patient itself, so that toggling the shudder class
+ * on an ancestor cannot restart it: an ancestor's class does not change this
+ * element's computed animation-name, and an animation only restarts when that
+ * changes. Put both on .patient and every shudder replayed the entrance.
+ */
+@keyframes bot-arrive {
+  0%   { transform: translateY(-90px) scale(.86); opacity: 0; }
+  55%  { transform: translateY(7px) scale(1.03); opacity: 1; }
+  78%  { transform: translateY(-3px) scale(.99); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.bench-wrap .patient .bot {
+  display: inline-block;
+  animation: bot-arrive .62s cubic-bezier(.2, 1.05, .3, 1) backwards;
+}
+
+/*
+ * And it reacts to being tested. The robot has just produced a wrong answer;
+ * this is the one moment the child is looking directly at it, and it used to
+ * be a number appearing in a box.
+ */
+@keyframes bot-zap {
+  0%   { transform: translate(0, 0) rotate(0deg); filter: none; }
+  10%  { transform: translate(-6px, 1px) rotate(-1.8deg); }
+  24%  { transform: translate(6px, -2px) rotate(1.8deg); filter: brightness(1.22) saturate(1.5); }
+  38%  { transform: translate(-4px, 2px) rotate(-1.2deg); }
+  52%  { transform: translate(3px, -1px) rotate(.8deg); filter: brightness(1.12); }
+  68%  { transform: translate(-2px, 1px) rotate(-.4deg); }
+  100% { transform: translate(0, 0) rotate(0deg); filter: none; }
+}
+@keyframes zap-flash {
+  0%   { opacity: 0; }
+  14%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes spot-flare {
+  0%   { opacity: 1; transform: scale(1); }
+  18%  { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.bench-wrap.zapped .patient { animation: bot-zap .6s ease-out; }
+.bench-wrap.zapped .patient::before {
+  content: ""; position: absolute; inset: -8%; border-radius: 50%;
+  pointer-events: none; z-index: -1;
+  background: radial-gradient(circle, rgba(232, 83, 111, .38), transparent 66%);
+  animation: zap-flash .46s ease-out forwards;
+}
+.bench-wrap.zapped .spotlight { animation: spot-flare .5s ease-out; }
+
+/* The robot's answer lands rather than being there. */
+@keyframes slate-pop {
+  0%   { transform: scale(.72); opacity: 0; }
+  62%  { transform: scale(1.07); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.slate.robot { animation: slate-pop .34s cubic-bezier(.2, 1.5, .4, 1) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bench-wrap .patient .bot,
+  .bench-wrap.zapped .patient,
+  .bench-wrap.zapped .spotlight,
+  .slate.robot { animation: none; }
+  .bench-wrap.zapped .patient::before { content: none; }
+}
 
 /* ---------------------------------------------------------- repair moment */
 .repair { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }

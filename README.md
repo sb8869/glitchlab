@@ -223,6 +223,31 @@ robots wearing the bent-antenna tell**, because that tell is itself an inline
 transform on the same group — animating the property would have straightened
 the bend and silently erased their glitch.
 
+### Arriving, reacting, and one moment worth being loud about
+
+A robot **arrives** on the bench rather than appearing there — it drops in and
+settles. The animation sits on the `.bot` span inside `.patient` rather than on
+`.patient` itself, which is not fussiness: the shudder below toggles a class on
+an ancestor, and with both animations on the same element every shudder
+replayed the entrance. An ancestor's class does not change a child's computed
+`animation-name`, so on separate elements the two compose instead of fighting.
+
+A robot **reacts to being tested**. When it produces its wrong answer it
+shudders, brightens, throws a red flash behind itself and kicks the spotlight —
+the one moment the child is looking straight at it, and previously a number
+appearing in a box. The class rides the wrapper rather than the robot, because
+the spotlight is a sibling that comes *before* the robot in the markup and CSS
+cannot select backwards.
+
+And the **empty bench** — thirteen robots repaired, every repair held through a
+delayed retest days later — gets a full-window burst of 52 pieces, a stamp that
+lands, and the one fanfare in the app. That is the end of the game. It was a
+sentence. It happens exactly once, which is the argument for it being the one
+place here that is genuinely extravagant.
+
+All of it off under `prefers-reduced-motion`, where the fanfare still plays:
+sound is not motion.
+
 ### One stylesheet, and the guard that makes it safe
 
 There is a single stylesheet, no CSS modules and no scoping. That is a
@@ -323,11 +348,12 @@ taught nothing and spent the only attention a five-year-old arrives with. The
 grown-up note below it is untouched at 97 words and still folded away: it is
 written for the one reader who came here to read.
 
-**Three sounds, and none of them for a correct answer.** A suspect ruled out
+**Four cues, and none of them for a correct answer.** A suspect ruled out
 gets a rubber-stamp thud (one per card, capped at four, or thirteen at once
 would be a machine gun), a closed case gets a rising three-note figure, and a
-repaired robot gets the only cue in the game that resolves upward and rings.
-Each marks something the repair log already recorded. Nothing fires on a right
+repaired robot gets the only short cue that resolves upward and rings, and an
+empty bench gets a fanfare that is deliberately longer than the rest, because
+it happens once. Each marks something the repair log already recorded. Nothing fires on a right
 answer, for the same reason nothing else here rewards one: the diagnosis is
 fed by honest wrong answers, and a child who learns that being right makes a
 happy noise starts guessing safe. They are synthesized from oscillators and a
