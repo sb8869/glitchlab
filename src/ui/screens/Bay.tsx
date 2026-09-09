@@ -5,8 +5,11 @@ import { BAND_ORDER } from "../../bugs/types.ts";
 import {
   bandBelow,
   bandOpensNextSession,
+  bandsOpenedThisSession,
   getRecord,
+  hasCheered,
   isBandOpen,
+  markCheered,
   type LearnerState,
 } from "../../learner/index.ts";
 import { play } from "../audio.ts";
@@ -82,10 +85,22 @@ export function Bay({
    * "Glitching · 0" shelf reads as a bug, not as a finish.
    */
   const clear = unfixed.length === 0 && probation.length === 0 && repaired.length > 0;
-  // Once, when the bench first comes up empty — including on a reload, which
-  // is the right time to hear it too.
+  /*
+   * The finale, exactly once per lab.
+   *
+   * An empty bench is a state; the celebration is an event. Firing it on the
+   * state meant a trip to the repair log and back set off the confetti and a
+   * second fanfare — a moment whose whole pitch is that it happens once,
+   * happening on a loop. The flag is persisted, so a reload does not re-throw
+   * the party either, and "Start a new lab" clears it so the next lab can
+   * earn its own.
+   */
+  const [cheer, setCheer] = useState(false);
   useEffect(() => {
-    if (clear) play("cleared");
+    if (!clear || hasCheered()) return;
+    markCheered();
+    setCheer(true);
+    play("cleared");
   }, [clear]);
   /*
    * Nothing left to open today. Either everything is on probation, or this
@@ -100,6 +115,17 @@ export function Bay({
    * the library, which is a subtraction robot and would send them to the
    * wrong rung.
    */
+  /*
+   * A rung that opened while the child was away. This is the only milestone
+   * between the first robot and the last, and it used to be the line "these
+   * open next time you come in" — read yesterday, on a different screen.
+   */
+  const opened = bandsOpenedThisSession(learner);
+  const freshIds = new Set(
+    opened.length > 0 ? unfixed.filter((id) => opened.includes(bandOf(id))) : [],
+  );
+  const openedName = opened.length > 0 ? BAND_NAME[opened[opened.length - 1]!] : null;
+
   const lockedBands = BAND_ORDER.filter((b) => locked.some((id) => bandOf(id) === b));
   const nextBand = lockedBands[0] ?? null;
   const nextRung = nextBand ? bandBelow(nextBand) : null;
@@ -115,7 +141,15 @@ export function Bay({
             {clear
               ? "The bench is clear."
               : !nothingToOpen
-                ? "Who's on the bench today?"
+                ? /*
+                     A rung opening is the only milestone between the first
+                     robot and the last, and it used to arrive as a line on
+                     YESTERDAY's screen. It gets the headline on the day it
+                     happens; the tally below stays whole either way.
+                   */
+                  openedName
+                  ? `The ${openedName} robots just opened up.`
+                  : "Who's on the bench today?"
                 : opensTomorrow
                   ? "That's this lot sorted."
                   : "Every one of them is waiting on a retest."}
@@ -149,7 +183,8 @@ export function Bay({
       </div>
 
       {clear && (
-        <section className="allclear">
+        <section className={`allclear${cheer ? " cheer" : ""}`}>
+          {cheer && (
           <div className="confetti" aria-hidden="true">
             {CONFETTI.map((p, i) => (
               <span
@@ -165,6 +200,7 @@ export function Bay({
               />
             ))}
           </div>
+          )}
           <span className="clear-stamp">EVERY ROBOT REPAIRED</span>
           <p className="log-sub">
             Not one of them was signed off on a streak. Each one sat on the bench for a
@@ -201,6 +237,7 @@ export function Bay({
           ids={glitching}
           onOpen={onOpen}
           tell
+          fresh={freshIds}
         />
       )}
 
@@ -280,6 +317,7 @@ function Shelf({
   tell = false,
   dashed = false,
   eyes = "idle",
+  fresh,
 }: {
   title: string;
   hint: string;
@@ -289,6 +327,8 @@ function Shelf({
   tell?: boolean;
   dashed?: boolean;
   eyes?: "idle" | "celebrating";
+  /** Robots whose rung opened today: they rise onto the shelf, in order. */
+  fresh?: ReadonlySet<string>;
 }) {
   return (
     <section className={`shelf ${tone}${dashed ? " dashed" : ""}`}>
@@ -297,13 +337,15 @@ function Shelf({
         <span className="shelf-hint">{hint}</span>
       </div>
       <div className="shelf-row">
-        {ids.map((id) => {
+        {ids.map((id, i) => {
           const skin = SKINS[id]!;
           const bug = BUGS.find((b) => b.id === id)!;
+          const justOpened = fresh?.has(id) ?? false;
           return (
             <button
               key={id}
-              className={`bot-card${onOpen ? " open" : ""}`}
+              className={`bot-card${onOpen ? " open" : ""}${justOpened ? " fresh" : ""}`}
+              style={justOpened ? { animationDelay: `${i * 90}ms` } : undefined}
               onClick={onOpen ? () => onOpen(id) : undefined}
               disabled={!onOpen}
             >

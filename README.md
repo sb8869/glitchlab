@@ -248,6 +248,39 @@ place here that is genuinely extravagant.
 All of it off under `prefers-reduced-motion`, where the fanfare still plays:
 sound is not motion.
 
+### The smaller beats
+
+**Eliminated cards are aimed at the pile.** Each card's travel is measured at
+the moment the sweep starts — while the cards are still in their grid slots,
+which is where they need to fly from — and it shrinks on the way down, so
+thirteen suspects read as being *filed* rather than falling off the bottom of
+the world. On the first elimination there is no pile yet, so the target is the
+foot of the board, where it is about to appear.
+
+**The headline number is counted, not announced.** It rolls from the old value
+to the new one over 430ms while the cards fall. It still arrives well before
+they land, which is the intended order: the number is the result, the cards are
+the reason for it.
+
+**A rung opening gets the headline on the day it happens.** Finishing place
+value and unlocking addition is the only milestone between the first robot and
+the last, and it used to be a line of text on *yesterday's* screen. The bands
+that opened this session are derived rather than stored — open now, locked one
+session ago — so there is no flag to keep in sync, and the newly available
+robots rise onto the bench in order.
+
+**"A few days later" behaves like a few days later.** Three nights fill in one
+at a time under the stamp, then the session number arrives. The marks are
+deliberately unnumbered: the retest delay is two sessions plus a jitter, so
+"a few" is the honest claim and three dots make it without promising a count.
+
+**The finale fires once per lab, not once per render.** An empty bench is a
+state and the celebration is an event, so hanging it off the state meant a trip
+to the repair log and back set off the confetti and a second fanfare. It is now
+gated on a persisted flag that "Start a new lab" clears. This is not stored in
+the learner: the repair log records what the child did, and whether a party has
+already been thrown is not that.
+
 ### One stylesheet, and the guard that makes it safe
 
 There is a single stylesheet, no CSS modules and no scoping. That is a

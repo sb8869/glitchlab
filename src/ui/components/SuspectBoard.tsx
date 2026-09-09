@@ -33,6 +33,8 @@ const SWEEP_MS = 480;
 const STAGGER_MS = 45;
 /** A cascade, not a queue. Eleven cards at 45ms each would be a wait. */
 const STAGGER_CAP = 320;
+/** How long the headline number takes to travel to its new value. */
+const COUNT_MS = 430;
 
 /*
  * The width at which the layout stacks and the board stops being sticky —
@@ -99,6 +101,7 @@ function Card({
   open,
   leaving,
   delay = 0,
+  flight,
   probe,
   onToggle,
   onAccuse,
@@ -116,6 +119,8 @@ function Card({
   leaving?: boolean;
   /** Stagger, so a mass elimination cascades rather than blinks. */
   delay?: number;
+  /** Where this card has to travel to reach the pile, measured at sweep time. */
+  flight?: { x: number; y: number } | null;
   /** The last problem run, so an opened card can answer it in its own voice. */
   probe?: Probe | null;
   onToggle?: (id: string) => void;
@@ -146,7 +151,14 @@ function Card({
   return (
     <div
       className={`icard${lead ? " lead" : ""}${open ? " open" : ""}${canOpen ? " openable" : ""}${sig ? "" : " no-sig"}${leaving ? " gone" : ""}`}
-      style={{ ["--tilt" as string]: `${tilt}deg`, ["--sweep-delay" as string]: `${delay}ms` }}
+      data-suspect={id}
+      style={{
+        ["--tilt" as string]: `${tilt}deg`,
+        ["--sweep-delay" as string]: `${delay}ms`,
+        ...(flight
+          ? { ["--fx" as string]: `${flight.x}px`, ["--fy" as string]: `${flight.y}px` }
+          : null),
+      }}
       aria-hidden={leaving || undefined}
       onClick={canOpen ? () => onToggle!(id) : undefined}
       role={canOpen ? "button" : undefined}
@@ -311,6 +323,13 @@ export function SuspectBoard({
    */
   const [revealed, setRevealed] = useState(live.length);
   const boardRef = useRef<HTMLElement | null>(null);
+  /*
+   * Per-card travel to the ruled-out pile, measured the moment the sweep
+   * starts. The cards used to fall a flat 210px and fade into nothing, with
+   * the pile they belong in sitting right underneath them — which reads as
+   * deleted rather than filed.
+   */
+  const [flight, setFlight] = useState<Record<string, { x: number; y: number }>>({});
 
   useEffect(() => {
     if (hold) return;
@@ -339,6 +358,30 @@ export function SuspectBoard({
       setRevealed(next.length);
       return;
     }
+    /*
+     * Measured BEFORE the cards are marked as leaving: they are still in their
+     * grid slots at this point, which is exactly where they need to fly from.
+     * On the first elimination there is no pile yet, so the target is the foot
+     * of the board — where the pile is about to appear.
+     */
+    const board = boardRef.current;
+    const vectors: Record<string, { x: number; y: number }> = {};
+    if (board) {
+      const pile = board.querySelector(".pile");
+      const box = (pile ?? board).getBoundingClientRect();
+      const tx = box.left + box.width / 2;
+      const ty = pile ? box.top + box.height / 2 : box.bottom - 40;
+      for (const id of departing) {
+        const el = board.querySelector(`[data-suspect="${CSS.escape(id)}"]`);
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        vectors[id] = {
+          x: Math.round(tx - (r.left + r.width / 2)),
+          y: Math.round(ty - (r.top + r.height / 2)),
+        };
+      }
+    }
+    setFlight(vectors);
     setLeaving(new Set(departing));
     setRevealed(next.length);
     /*
@@ -370,6 +413,33 @@ export function SuspectBoard({
     // read, never watched.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posterior, hold]);
+
+  /*
+   * The headline number, rolling. `revealed` jumps to the new value the moment
+   * the sweep starts, which is right; but thirteen suspects vanishing into a
+   * single digit deserves to be counted rather than announced, so the digits
+   * travel while the cards do.
+   */
+  const [display, setDisplay] = useState(revealed);
+  useEffect(() => {
+    if (display === revealed) return;
+    if (prefersReducedMotion()) {
+      setDisplay(revealed);
+      return;
+    }
+    const from = display;
+    const start = performance.now();
+    let raf = 0;
+    const step = (now: number) => {
+      const p = Math.min(1, (now - start) / COUNT_MS);
+      setDisplay(Math.round(from + (revealed - from) * (1 - (1 - p) ** 3)));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // `display` is the value to travel FROM, read once when `revealed` moves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed]);
 
   const sweeping = leaving.size > 0;
   /*
@@ -409,8 +479,9 @@ export function SuspectBoard({
         <span className="board-tag">SUSPECT BOARD</span>
         <span className="board-count">
           {/* Keyed on the value so the punch replays every time it drops. */}
+          {/* Keyed on the target so the punch fires once; the digits roll. */}
           <b key={shown} className="tick">
-            {shown}
+            {display}
           </b>
           <span>{settled ? "found it" : "still possible"}</span>
         </span>
@@ -471,6 +542,7 @@ export function SuspectBoard({
                 open={open === id}
                 leaving={go}
                 delay={go ? Math.min(order * STAGGER_MS, STAGGER_CAP) : 0}
+                flight={go ? flight[id] : null}
                 probe={probe}
                 onToggle={toggle}
                 onAccuse={onAccuse}

@@ -300,6 +300,23 @@ export function isBandOpen(state: LearnerState, band: Band): boolean {
 }
 
 /** True when this rung is one good night's sleep away. Only the copy cares. */
+/**
+ * The bands that opened THIS session — open now, and locked one session ago.
+ *
+ * Derived rather than stored. `isBandOpen` is a pure function of the session
+ * index and what has been drilled, so asking it the same question about
+ * yesterday answers "did this rung open while the child was away?" without a
+ * flag to keep in sync or migrate.
+ *
+ * Finishing a rung is the only milestone between the first robot and the last,
+ * and it used to arrive as the sentence "these open next time you come in".
+ */
+export function bandsOpenedThisSession(state: LearnerState): Band[] {
+  if (state.sessionIndex <= 1) return [];
+  const yesterday: LearnerState = { ...state, sessionIndex: state.sessionIndex - 1 };
+  return BAND_ORDER.filter((b) => isBandOpen(state, b) && !isBandOpen(yesterday, b));
+}
+
 export function bandOpensNextSession(state: LearnerState, band: Band): boolean {
   if (isBandOpen(state, band)) return false;
   for (const earlier of BAND_ORDER) {

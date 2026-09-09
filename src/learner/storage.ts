@@ -57,6 +57,37 @@ export function markGuideSeen(storage: StorageLike | null = defaultStorage()): v
   }
 }
 
+/**
+ * Whether this lab has already had its finale.
+ *
+ * The empty bench is a STATE, and the celebration is an EVENT — so it cannot
+ * be driven by the state alone. Hanging it off "the bench is clear" meant that
+ * every trip to the repair log and back set off the confetti and a second
+ * fanfare, and a moment whose entire pitch is that it happens once was
+ * happening on a loop.
+ *
+ * Deliberately not part of the learner: the repair log records what the child
+ * did, and whether a party has already been thrown is not that.
+ */
+export const CHEERED_KEY = "glitchlab.cheered.v1";
+
+export function hasCheered(storage: StorageLike | null = defaultStorage()): boolean {
+  try {
+    return storage?.getItem(CHEERED_KEY) === "1";
+  } catch {
+    // Storage unavailable: cheer. Better twice than never, for this one.
+    return false;
+  }
+}
+
+export function markCheered(storage: StorageLike | null = defaultStorage()): void {
+  try {
+    storage?.setItem(CHEERED_KEY, "1");
+  } catch {
+    /* nothing to do */
+  }
+}
+
 export type StorageLike = {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -115,8 +146,10 @@ export function saveLearner(
 export function clearLearner(storage: StorageLike | null = defaultStorage()): void {
   try {
     storage?.removeItem(STORAGE_KEY);
-    // A new lab starts from the beginning, instructions included.
+    // A new lab starts from the beginning, instructions included — and gets to
+    // earn its own finale.
     storage?.removeItem(GUIDE_KEY);
+    storage?.removeItem(CHEERED_KEY);
   } catch {
     /* nothing to do */
   }

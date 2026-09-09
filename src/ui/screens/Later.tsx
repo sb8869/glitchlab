@@ -31,6 +31,19 @@ export function Later({
 
       <div className="gap">
         <span className="gap-stamp">A FEW DAYS LATER</span>
+        {/*
+          Three nights, filling in one at a time. The delayed retest is the
+          whole thesis of this app and this is the screen that carries it, and
+          until now it carried it entirely in words on a static card. The marks
+          are deliberately unnumbered: the delay is two sessions plus a jitter,
+          so "a few" is the honest claim and three dots make it without
+          promising a count.
+        */}
+        <div className="gap-days" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="day-mark" style={{ animationDelay: `${300 + i * 230}ms` }} />
+          ))}
+        </div>
         <div className="gap-no">Session {session}</div>
         <p className="log-sub">
           {waiting > 0 ? (
