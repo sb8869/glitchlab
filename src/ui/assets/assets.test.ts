@@ -174,3 +174,33 @@ test("the favicon is the app icon, not a drawing of it", () => {
   const shapes = (s: string) => (s.match(/<(rect|circle|line|g)\b/g) ?? []).join(",");
   assert.equal(shapes(icon), shapes(master), "favicon.svg has drifted from app-icon.svg");
 });
+
+/*
+ * Composition keeps the skeleton's slot ids, and a page renders many bots at
+ * once — the bench shows fifteen, so `id="bot-root"` exists fifteen times over.
+ * That is harmless only for as long as nothing in the art RESOLVES an id:
+ * a gradient, a clipPath, a mask, a filter or a <use> would bind to whichever
+ * copy the document happened to define first, and every robot after the first
+ * would quietly render with another robot's paint.
+ *
+ * So the invariant is: bot art may define ids, but must never reference them.
+ * Drop in new art that does, and this fails instead of the bench looking odd
+ * in a way no one can explain.
+ */
+test("bot art never references an id, because a page renders many bots", () => {
+  for (const f of FILES) {
+    const svg = read(f);
+    for (const [pattern, what] of [
+      [/url\(#/, "url(#…) — a gradient, pattern or filter reference"],
+      [/<use\b/, "<use> — an element reference"],
+      [/\b(?:clip-path|mask|filter)="(?!none)/, "clip-path / mask / filter"],
+      [/\bhref="#/, "an internal href"],
+    ] as const) {
+      assert.equal(
+        pattern.test(svg),
+        false,
+        `${f} contains ${what}; ids are duplicated across every bot on the page`,
+      );
+    }
+  }
+});

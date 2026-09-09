@@ -211,7 +211,7 @@ function Card({
           <span className="pq">{itemLabel(probe.item)}</span>
           <span className="arrow">→</span>
           <b>{predict(id, probe.item)}</b>
-          <span className="verdict">
+          <span className="says">
             {predict(id, probe.item) === probe.robotAnswer
               ? `same as ${probe.name}`
               : `not ${probe.name}`}

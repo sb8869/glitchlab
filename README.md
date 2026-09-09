@@ -31,7 +31,7 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 5. Game layer | full loop playable, 13 screens, 34 tests |
 | 6. Remediation layer | done, 17 tests |
 
-`npm run check` — typecheck plus 143 tests, all green.
+`npm run check` — typecheck plus 147 tests, all green.
 
 ---
 
@@ -204,6 +204,32 @@ over the eyes removes the only expressive channel the characters have and the
 bot goes dead on screen. Expression is carried by eye shape alone, so
 `no overlay tell draws inside the eye band` is now asserted rather than
 remembered.
+
+### One stylesheet, and the guard that makes it safe
+
+There is a single stylesheet, no CSS modules and no scoping. That is a
+reasonable choice at this size and a sharp edge at the same time: a class
+styled by a bare selector is a global name, and reusing one for something
+unrelated restyles the original silently. It happened three times in one
+afternoon — `.pick` (the fraction picker's row layout, reused for a tappable
+suspect card, which laid the card out as a flex row and shrank its probability
+meter from a 105px bar to a 4px stub), `.mute` (the bench's tone for the locked
+shelf, reused for the sound toggle, which restyled a whole `<section>` into a
+34px square), and `.verdict` (the case-closed banner, reused for a line inside
+a suspect card). None threw. None failed a test. Two were found by looking at
+a screenshot.
+
+So `styles.test.ts` enforces three things instead: every class a component
+applies has a rule, every rule is applied by some component, and a global
+class name is used by only one component unless it is listed as deliberately
+shared. It found the three above, plus a `.np-row.active` that was being
+applied to style nothing at all and three rules left behind by removed
+features.
+
+`assets.test.ts` enforces the matching invariant in the art: bot SVGs may
+define ids but must never reference them, because composition keeps the
+skeleton's slot ids and a page renders up to fifteen bots — a gradient or
+clipPath reference would bind every robot to the first one's paint.
 
 ### Look and feel: "Case Files"
 
@@ -602,7 +628,7 @@ dressed up as a choice.
 
 ```bash
 npm install          # react + vite for the game; the engine itself has zero deps
-npm run check        # typecheck + 143 tests
+npm run check        # typecheck + 147 tests
 npm run simulate     # the evaluation numbers above
 npm run collisions   # per-item hypothesis fusion report
 npm run cast         # renders every character to out/contact-sheet.html

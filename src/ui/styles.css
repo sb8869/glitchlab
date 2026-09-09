@@ -245,7 +245,6 @@ button:disabled { cursor: not-allowed; }
 .slate.robot .value { color: var(--glitch); }
 .slate.truth { background: var(--tint-good); border-color: var(--good); }
 .slate.truth .value { color: var(--good); }
-.slate.said { background: var(--surface); }
 
 .answer-tray { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .answer-tray input {
@@ -552,11 +551,11 @@ button:disabled { cursor: not-allowed; }
 .icard .probe b { font-size: 14px; }
 .icard .probe.same b { color: var(--on-good); }
 .icard .probe.diff b { color: var(--on-glitch); }
-.icard .probe .verdict {
+.icard .probe .says {
   flex-basis: 100%; font-family: var(--body); font-size: 11px; font-weight: 800;
 }
-.icard .probe.same .verdict { color: var(--on-good); }
-.icard .probe.diff .verdict { color: var(--on-glitch); }
+.icard .probe.same .says { color: var(--on-good); }
+.icard .probe.diff .says { color: var(--on-glitch); }
 .cards.dense .icard .probe { font-size: 11.5px; padding: 5px 7px; }
 .cards.dense .icard .probe b { font-size: 13px; }
 
@@ -620,7 +619,6 @@ button:disabled { cursor: not-allowed; }
   display: inline-block;
   animation: count-punch .34s cubic-bezier(.2, 1.4, .4, 1);
 }
-.stamp { animation: stamp-land .3s cubic-bezier(.2, 1.4, .4, 1) backwards; }
 
 /* Motion is the reward here, not the information. Turning it off loses none. */
 @media (prefers-reduced-motion: reduce) {
@@ -707,6 +705,8 @@ button:disabled { cursor: not-allowed; }
   border-radius: 5px; padding: 2px 10px;
   font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: .1em;
   opacity: .85;
+  /* Re-stamps whenever the pile grows; keyed on the count in the markup. */
+  animation: stamp-land .3s cubic-bezier(.2, 1.4, .4, 1) backwards;
 }
 .pile .more { position: absolute; left: 12px; bottom: 10px; font-size: 11px; font-weight: 800; color: var(--ink-soft); }
 
@@ -769,7 +769,7 @@ button:disabled { cursor: not-allowed; }
 .ways { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .way {
   background: var(--surface); border: 2.5px solid var(--ink); border-radius: 12px;
-  padding: 10px 12px; text-align: center;
+  padding: 12px 14px; text-align: center;
 }
 .way-cap { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); }
 .way-sum { font-size: 15px; font-weight: 800; margin-top: 2px; }
@@ -833,10 +833,9 @@ button:disabled { cursor: not-allowed; }
 .bot-card.open { cursor: pointer; transition: transform .1s, box-shadow .1s; }
 .bot-card.open:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
 .bot-card:disabled { cursor: default; }
-.bot-card.due { border-color: var(--accent); background: var(--tint-accent); }
+
 .bot-name { font-family: var(--display); font-size: 14px; font-weight: 700; }
 .bot-band { font-size: 10.5px; font-weight: 800; color: var(--ink-soft); }
-.bot-card.due .bot-band { color: var(--on-accent); }
 
 .bay-actions { display: flex; justify-content: space-between; gap: 10px; padding-top: 4px; }
 
@@ -880,6 +879,14 @@ button:disabled { cursor: not-allowed; }
 .np-dots { display: flex; align-items: center; gap: 6px; }
 .np-dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); }
 .np-dot.on { background: var(--teal-deep); }
+
+/*
+ * The row being answered. It is already the only row with an input in it, but
+ * on a four-row notepad the eye deserves a pointer — and the class was being
+ * applied to style nothing at all, which is worse than not applying it.
+ */
+.np-row.active .np-q { color: var(--ink); font-size: 24px; }
+.np-row:not(.active) .np-q { color: var(--ink-soft); }
 .np-count { font-size: 13px; font-weight: 800; color: var(--ink-soft); margin-left: 6px; }
 
 /* --------------------------------------------------------------- story -- */
@@ -1012,10 +1019,6 @@ button:disabled { cursor: not-allowed; }
   font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
   margin-top: 6px; line-height: 1.35;
 }
-.way { padding: 12px 14px; }
-
-.reveal { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-
 /* The teaching panel shown after a miss: the working, result left blank. */
 .teach { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .teach .way { max-width: 340px; width: 100%; }
