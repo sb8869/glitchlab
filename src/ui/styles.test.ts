@@ -113,6 +113,9 @@ function appliedClasses(): Map<string, Set<string>> {
     }
     // `tone="warn"` and friends become class names at the other end.
     for (const m of src.matchAll(/\btone="([A-Za-z][\w-]*)"/g)) names.add(m[1]!);
+    // Hooks spliced into composed SVG markup are applied classes too.
+    for (const m of src.matchAll(/\bclass="([^"]*)"/g))
+      for (const word of m[1]!.split(/\s+/)) if (/^[A-Za-z][\w-]*$/.test(word)) names.add(word);
     for (const n of names) {
       if (!out.has(n)) out.set(n, new Set());
       out.get(n)!.add(relative(DIR, file));

@@ -205,6 +205,24 @@ bot goes dead on screen. Expression is carried by eye shape alone, so
 `no overlay tell draws inside the eye band` is now asserted rather than
 remembered.
 
+### The robots are alive when nothing is happening
+
+Every robot used to be a static drawing until something happened to it, which
+for a game aimed at five-year-olds is most of the screen for most of the time.
+Three loops fix that: the antenna sways, the eyes blink, and a robot that
+still has a tell twitches it. All three are transform-only, so a bench of
+fifteen costs compositing and nothing else, and all three run at a
+per-character **negative** delay so the robots start partway through their
+cycles — in lockstep, thirteen blinking bots read as a screensaver rather than
+a room full of machines.
+
+Two details are load-bearing. The hooks are **classes spliced in after
+composition, never ids**, for the reason `assets.test.ts` gives: fifteen bots
+on a page means fifteen `#bot-antenna`s. And the sway is **skipped for the two
+robots wearing the bent-antenna tell**, because that tell is itself an inline
+transform on the same group — animating the property would have straightened
+the bend and silently erased their glitch.
+
 ### One stylesheet, and the guard that makes it safe
 
 There is a single stylesheet, no CSS modules and no scoping. That is a

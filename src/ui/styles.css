@@ -825,6 +825,48 @@ button:disabled { cursor: not-allowed; }
 .shelf-hint { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
 .shelf-row { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* ------------------------------------------------------------ idle life --- */
+
+/*
+ * Until now a robot was a static drawing until something happened to it, which
+ * for a game aimed at five-year-olds is most of the screen for most of the
+ * time. Three small loops fix that, and all three are transform-only so a
+ * bench of fifteen costs compositing and nothing else.
+ *
+ * Every one runs at a per-character NEGATIVE delay (--phase, set by Bot), so
+ * the robots start partway through their cycles. In lockstep, thirteen
+ * blinking bots read as a screensaver rather than a room full of machines.
+ */
+@keyframes idle-sway {
+  0%, 100% { transform: rotate(-2.2deg); }
+  50%      { transform: rotate(2.6deg); }
+}
+@keyframes idle-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  96%           { transform: scaleY(.08); }
+}
+/* The glitch, ticking over. Only ever visible on a robot that still has one. */
+@keyframes idle-twitch {
+  0%, 84%, 100% { transform: translate(0, 0) rotate(0deg); }
+  88%           { transform: translate(1.5px, -1px) rotate(-5deg); }
+  92%           { transform: translate(-1.5px, 1px) rotate(5deg); }
+  96%           { transform: translate(.5px, 0) rotate(-2deg); }
+}
+/* bot-antenna carries transform-box and transform-origin inline, from the art. */
+.bot .p-ant { animation: idle-sway 3.6s ease-in-out var(--phase, 0ms) infinite; }
+.bot .p-eyes {
+  transform-box: fill-box; transform-origin: center;
+  animation: idle-blink 6.2s linear var(--phase, 0ms) infinite;
+}
+.bot .p-tell {
+  transform-box: fill-box; transform-origin: center;
+  animation: idle-twitch 2.8s ease-in-out var(--phase, 0ms) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bot .p-ant, .bot .p-eyes, .bot .p-tell { animation: none; }
+}
+
 .bot-card {
   display: flex; flex-direction: column; align-items: center; gap: 1px;
   background: var(--surface); border: 2.5px solid var(--ink); border-radius: 12px;
