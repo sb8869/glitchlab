@@ -18,6 +18,7 @@ import {
   saveLearner,
   type LearnerState,
 } from "../learner/index.ts";
+import { isMuted, setMuted } from "./audio.ts";
 import { Sprocket } from "./components/Bot.tsx";
 import { Peek, peekEnabled } from "./components/Peek.tsx";
 import { buildWarmup, type Warmup as WarmupData } from "./game/warmup.ts";
@@ -63,6 +64,7 @@ export function App() {
   );
   /** The same guide, reachable from the bench forever after. */
   const [guideOpen, setGuideOpen] = useState(false);
+  const [mute, setMute] = useState(isMuted);
 
   const setLearner = useCallback((next: LearnerState) => {
     setLearnerState(next);
@@ -102,12 +104,48 @@ export function App() {
           <span className="brand-name">Glitch Lab</span>
         </div>
         <div className="tally">
+          {/*
+            Sound is on by default. Three short cues that only ever mark
+            something the repair log already recorded are not the kind of noise
+            a page should need permission for, and a mute nobody finds is the
+            same as no sound at all. The choice is remembered.
+          */}
+          <button
+            className="soundbtn"
+            aria-label={mute ? "Turn sound on" : "Turn sound off"}
+            aria-pressed={mute}
+            title={mute ? "Sound off" : "Sound on"}
+            onClick={() => {
+              const next = !mute;
+              setMuted(next);
+              setMute(next);
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path d="M4 9.5h3.2L11.5 6v12L7.2 14.5H4z" fill="currentColor" />
+              {mute ? (
+                <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M15 9.5l5 5M20 9.5l-5 5" />
+                </g>
+              ) : (
+                <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M14.8 9.4a3.6 3.6 0 0 1 0 5.2" />
+                  <path d="M17.6 6.9a7.2 7.2 0 0 1 0 10.2" />
+                </g>
+              )}
+            </svg>
+          </button>
           <div className="slots">
             {BUGS.map((b) => {
               const st = getRecord(learner, b.id).state;
               return (
                 <span
-                  key={b.id}
+                  /*
+                   * Keyed on the STATE as well as the robot, so React replaces
+                   * the element when a dot changes and its animation plays.
+                   * Keeping the same element would have re-styled it silently.
+                   */
+                  key={`${b.id}-${st}`}
                   className={`slot${st === "repaired" ? " fixed" : st === "probation" ? " prob" : ""}`}
                 />
               );

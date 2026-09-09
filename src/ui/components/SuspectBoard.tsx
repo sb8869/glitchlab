@@ -6,6 +6,7 @@ import { CORRECT, type Posterior } from "../../engine/infer.ts";
 import type { Item } from "../../bugs/types.ts";
 import { generateForBug } from "../../bugs/generate.ts";
 import { RULED_OUT, isTied, liveSuspects } from "../game/session.ts";
+import { play } from "../audio.ts";
 
 /** Deterministic per-slot tilt, so cards look pinned rather than printed. */
 const TILT = [-1.2, 1, 0.8, -0.9, 1.3, -1.1, 0.6, -1.4, 1.1, -0.7, 0.9, -1.2, 1.2, -0.8];
@@ -330,6 +331,9 @@ export function SuspectBoard({
       setRevealed(next.length);
       return;
     }
+    // Sound is not motion: a child who has turned animation off still gets
+    // told that something happened.
+    play("eliminate", departing.length);
     if (prefersReducedMotion()) {
       setSlots(next);
       setRevealed(next.length);

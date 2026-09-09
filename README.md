@@ -279,6 +279,20 @@ taught nothing and spent the only attention a five-year-old arrives with. The
 grown-up note below it is untouched at 97 words and still folded away: it is
 written for the one reader who came here to read.
 
+**Three sounds, and none of them for a correct answer.** A suspect ruled out
+gets a rubber-stamp thud (one per card, capped at four, or thirteen at once
+would be a machine gun), a closed case gets a rising three-note figure, and a
+repaired robot gets the only cue in the game that resolves upward and rings.
+Each marks something the repair log already recorded. Nothing fires on a right
+answer, for the same reason nothing else here rewards one: the diagnosis is
+fed by honest wrong answers, and a child who learns that being right makes a
+happy noise starts guessing safe. They are synthesized from oscillators and a
+noise buffer — no files, nothing fetched, consistent with the rest of the app
+running entirely on the device — and the mute toggle in the header is
+remembered. Sound is not motion, so `prefers-reduced-motion` silences the
+animation and keeps the cue: a child who has turned motion off is still told
+that something happened.
+
 ### The game: mutual diagnosis
 
 The child debugs the robot while the engine debugs the child, and the same

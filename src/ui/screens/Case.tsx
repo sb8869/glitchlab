@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { play } from "../audio.ts";
 import { bugById } from "../../bugs/library.ts";
 import { correct, itemLabel } from "../../bugs/procedures.ts";
 import { traceFor } from "../../remediation/trace.ts";
@@ -102,6 +103,12 @@ export function Case({
   }, [game, tied]);
 
   const done = streak >= STREAK_TO_PROBATION;
+  // Once, when the last drill lands. Not on every correct answer — nothing in
+  // this game pays out for being right, because the diagnosis runs on honest
+  // wrong ones.
+  useEffect(() => {
+    if (done) play("repaired");
+  }, [done]);
   const eyes: EyeState =
     phase === "found" || done
       ? "celebrating"
@@ -144,6 +151,7 @@ export function Case({
   }
   function accuse(id: string) {
     if (id === bugId) {
+      play("closed");
       onFound(bugId);
       setMissed(false);
       setPhase("found");
@@ -466,7 +474,7 @@ export function Case({
 
         {phase === "practice" && (
           <div className="repair">
-            <div className="patient">
+            <div className={`patient${done ? " mended" : ""}`}>
               <Bot character={bugId} eyes={done ? "celebrating" : "idle"} showTell={!done} size={170} />
             </div>
             <div className="streak">

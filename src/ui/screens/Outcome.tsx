@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+
+import { play } from "../audio.ts";
 import { bugById } from "../../bugs/library.ts";
 import { SKINS } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
@@ -34,6 +37,11 @@ export function Outcome({
 
   const skin = SKINS[r.bugId]!;
   const bug = bugById(r.bugId);
+  // The retest holding is the only permanent repair in the game. It is the one
+  // moment that has earned the sound twice.
+  useEffect(() => {
+    if (r.correct) play("repaired");
+  }, [r.correct]);
   return (
     <main className="panel">
       <div className="say">
@@ -59,7 +67,7 @@ export function Outcome({
 
       <div className="bench-wrap">
         <div className="spotlight" />
-        <div className="patient">
+        <div className={`patient${r.correct ? " mended" : ""}`}>
           <Bot
             character={r.bugId}
             eyes={r.correct ? "celebrating" : "idle"}

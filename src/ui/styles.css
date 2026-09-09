@@ -72,12 +72,34 @@ button:disabled { cursor: not-allowed; }
 .brand-name { font-family: var(--display); font-size: 26px; font-weight: 700; color: #fff; letter-spacing: .02em; }
 
 .tally { display: flex; align-items: center; gap: 12px; }
+/*
+ * Named "soundbtn", not "mute": .mute is already the bench's tone for the
+ * locked shelf, and a bare .mute rule here restyled a whole <section> into a
+ * 34px square. Second collision of the day from a short, generic class name.
+ */
+.soundbtn {
+  display: grid; place-items: center; width: 34px; height: 34px; flex: none;
+  border-radius: 9px; border: 2px solid var(--ink-soft); background: transparent;
+  color: #fff; padding: 0;
+}
+.soundbtn:hover { border-color: #fff; }
+.soundbtn:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.soundbtn[aria-pressed="true"] { color: var(--ink-faint); border-color: var(--ink-soft); }
 .slots { display: flex; gap: 4px; }
 .slot {
   width: 14px; height: 14px; border-radius: 50%;
   background: transparent; border: 2px solid var(--ink-soft);
 }
-.slot.fixed { background: var(--teal); border-color: var(--teal); box-shadow: 0 0 8px 2px rgba(79, 209, 197, .7); }
+@keyframes slot-fill {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(79, 209, 197, .9); }
+  40%  { transform: scale(1.9); box-shadow: 0 0 0 7px rgba(79, 209, 197, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 8px 2px rgba(79, 209, 197, .7); }
+}
+.slot.fixed {
+  background: var(--teal); border-color: var(--teal);
+  box-shadow: 0 0 8px 2px rgba(79, 209, 197, .7);
+  animation: slot-fill .55s cubic-bezier(.2, 1.4, .4, 1);
+}
 .slot.prob { background: var(--accent); border-color: var(--accent); }
 .tally-label { font-family: var(--display); font-size: 16px; font-weight: 600; color: #fff; white-space: nowrap; }
 .tally-label.warn { color: var(--accent); }
@@ -690,10 +712,22 @@ button:disabled { cursor: not-allowed; }
 
 /* ---------------------------------------------------------- repair moment */
 .repair { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+/*
+ * CASE CLOSED should land like a rubber stamp rather than appear like a label.
+ * It is the sentence the whole diagnosis was working toward and it used to
+ * simply be present when the screen rendered.
+ */
+@keyframes verdict-stamp {
+  0%   { opacity: 0; transform: rotate(-14deg) scale(2.6); }
+  55%  { opacity: 1; transform: rotate(-1.5deg) scale(.9); }
+  78%  { transform: rotate(-1.5deg) scale(1.08); }
+  100% { opacity: 1; transform: rotate(-1.5deg) scale(1); }
+}
 .repair .found {
   background: var(--tint-good); border: 2.5px solid var(--good); color: var(--on-good);
   border-radius: 7px; padding: 3px 12px; font-family: var(--display);
   font-size: 13px; font-weight: 700; letter-spacing: .08em; transform: rotate(-1.5deg);
+  animation: verdict-stamp .42s cubic-bezier(.2, 1.4, .4, 1) backwards;
 }
 .repair .bugname { font: 700 32px/1.2 var(--display); max-width: 20ch; margin: 0; }
 /* Reopening a known bug is not a victory stamp. */
@@ -909,7 +943,44 @@ button:disabled { cursor: not-allowed; }
   width: 18px; height: 18px; border-radius: 50%;
   border: 2.5px solid var(--ink); background: var(--surface);
 }
-.pip.on { background: var(--teal-deep); }
+@keyframes pip-fill {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.55); }
+  100% { transform: scale(1); }
+}
+.pip.on { background: var(--teal-deep); animation: pip-fill .34s cubic-bezier(.2, 1.5, .4, 1); }
+
+/*
+ * The repair itself.
+ *
+ * Every robot loses its tell when it is fixed, but the tells are three
+ * different kinds — an overlay, a swapped eye group, a transform on a limb —
+ * so there is no single element to animate away. A pop and an expanding ring
+ * around the whole robot marks the moment for all of them, and reads as the
+ * glitch leaving rather than as a sprite being swapped.
+ */
+@keyframes mend-pop {
+  0%   { transform: scale(1) rotate(0deg); }
+  28%  { transform: scale(1.1) rotate(-2.5deg); }
+  58%  { transform: scale(.97) rotate(1.5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes mend-ring {
+  0%   { opacity: .85; transform: translate(-50%, -50%) scale(.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.7); }
+}
+.patient.mended { animation: mend-pop .62s cubic-bezier(.2, 1.5, .4, 1); }
+.patient.mended::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 210px; height: 210px; border-radius: 50%;
+  border: 5px solid var(--teal); pointer-events: none;
+  animation: mend-ring .72s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .repair .found, .pip.on, .patient.mended, .patient.mended::after { animation: none; }
+  .patient.mended::after { content: none; }
+}
 
 .notice {
   display: flex; flex-direction: column; gap: 2px;
