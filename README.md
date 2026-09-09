@@ -49,7 +49,7 @@ selection from the same bank.
 | reached confidence threshold | 99.4% | 56.8% |
 
 Paired on the identical student: info-gain right and random wrong on 104
-students; random right and info-gain wrong on 5. McNemar χ² = 89.9 (1 df,
+students; random right and info-gain wrong on 5. McNemar χ² = 89.92 (1 df,
 p < 0.001).
 
 Two things make this a number worth quoting rather than a number the harness

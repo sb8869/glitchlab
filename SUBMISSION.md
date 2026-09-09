@@ -5,8 +5,9 @@ instead of deciding they are "bad at subtraction" and giving them easier sums.**
 
 Live link: **https://glitchlab-lyart.vercel.app** · Repo: this one · `npm run check` — typecheck + 147 tests
 
-No sign-in, nothing to configure. Progress lives in `localStorage`, so every visit
-starts a fresh lab at session 1. Append `?peek` for a read-only view of the
+No sign-in, nothing to configure. Progress lives in `localStorage`: a first visit
+starts a fresh lab at session 1, and every visit after that picks up the repair
+log where it was left — which is what makes a retest days later possible at all. Append `?peek` for a read-only view of the
 retest schedule — the delayed retest is invisible by design, which makes it
 invisible to anyone evaluating it too.
 
@@ -151,7 +152,7 @@ that screen also passes a validator that extracts each arithmetic claim and
 checks it against engine-computed truth — including the sentences the app wrote
 itself, because "we wrote it" is not a proof that the arithmetic is right.
 
-## Two rules the interface never breaks
+## Three rules the interface never breaks
 
 1. **Sprocket never says "you're wrong."** A wrong answer is *data* in this app,
    and the mascot has to behave like it. A miss shows the child the truth and
@@ -176,11 +177,40 @@ nothing.
 
 ## Demo script (2:30)
 
+**Recording note.** The ladder gate means a fresh lab opens with the three
+place-value robots only; each rung opens the session *after* the one below is
+finished. Everything from 0:00 to 2:05 below is reachable in **session 1 of a
+clean browser profile**. The tie card at 2:05 is not: both structurally
+confounded pairs live in the subtraction and fraction bands, so it needs a walk
+to **session 3** (three place-value robots, then two addition robots, closing up
+between). Record the long session, cut to 2:30. `?peek` shows the retest
+schedule while you record — useful for knowing when the probe is coming, and
+it is read-only.
+
 | time | on screen | said |
 | --- | --- | --- |
-| 0:00–0:20 | `40 - 27 = 27` written by a child | "This isn't a guess. It's a procedure — take the small digit from the big one, every column. Most math apps see one wrong answer and lower the difficulty." |
-| 0:20–0:50 | the bench, open Rivet, the glitch tell | "Fourteen suspects. The child picks which problem to test the robot with." |
-| 0:50–1:30 | pick a test, watch the board go 14 → 4 → 1 | "Those cards are not falling on a timer. Each answer is a Bayesian update over fourteen executable procedures, and the next problem is chosen by expected information gain. 4.35 questions on average instead of 9.73." |
-| 1:30–1:50 | the tie card: two suspects, same answer | "These two are structurally confounded — on every item where both are live they write the identical answer. The game says so instead of guessing." |
-| 1:50–2:15 | CASE CLOSED, the two workings side by side | "Naming the bug isn't teaching it. Here's where the two procedures part company, computed, not written by a model." |
-| 2:15–2:30 | a later session, the retest hidden in the warm-up | "It was never marked fixed on a streak. A few sessions later its own problem turns up inside ordinary work — unlabelled, never first, one per visit. Pass it then and it's repaired." |
+| 0:00–0:15 | `40 - 27 = 27` written by a child | "This is not a guess and it is not a gap. It is a procedure — take the small digit from the big one, in every column — and it is perfectly consistent. Most apps see one wrong answer and lower the difficulty." |
+| 0:15–0:30 | the start screen, then the bench | "Twenty-eight words, then thirteen robots. Every one of them gets math wrong the same way every time, and the child's job is to work out exactly how." |
+| 0:30–0:45 | open a robot; it drops onto the bench; the suspect board | "Fourteen suspects — the whole library, because it could be any of them. Each card is what that bug *writes*, not a description of it: the evidence a five-year-old can actually check." |
+| 0:45–1:05 | pick a test; the robot shudders and answers; the child answers | "The child picks which problem to test it with. Some questions rule out far more than others, and working out which is the numeracy work. Then they answer it themselves — you cannot spot a deviation from a rule you do not know." |
+| 1:05–1:25 | **the collapse**: cards stamped, swept into the pile, counter rolling down | "That is not a transition. Every card is a Bayesian update over fourteen executable procedures, and the next problem is chosen by expected information gain. On the evaluation bank: 98.8% identification in 4.35 questions, against 79.0% in 9.73 for a difficulty-ladder baseline. McNemar chi-square 89.92." |
+| 1:25–1:45 | tap a surviving card | "Ask any suspect still standing what it would have written on that problem. It writes what the robot wrote — which is exactly why it is still up there. On a test that ruled nothing out, all thirteen say the same thing, and the child can see why the question was wasted." |
+| 1:45–2:05 | CASE CLOSED, the two workings side by side, then the drills and the repair | "Naming the bug is not teaching it. Here is where the two procedures part company, computed rather than written by a model. Three in a row, and the robot still is not fixed." |
+| 2:05–2:20 | *(session 3)* the tie: two cards on one twine, `= TIED` | "These two are structurally confounded — on every item where both are live they write the identical answer. No amount of repeating it or making it harder separates them. The game says so, and names the problem that does." |
+| 2:20–2:30 | a few days later, the warm-up, the retest hidden inside it | "It was never marked fixed on a streak. A few sessions later its own problem turns up inside ordinary work — unlabelled, never first, one per visit. Pass it then and it is repaired." |
+
+### If you have thirty seconds more
+
+The bench clearing is the end of the game and the only moment in the app that
+is deliberately loud: thirteen robots repaired, every repair held through a
+delayed retest days later, a full-window burst and the one fanfare. It fires
+once per lab — reaching it on camera means finishing all thirteen, so it is a
+separate take.
+
+### What not to say
+
+Do not call the numbers a simulation or the animation a transition. The cards
+falling are a posterior, the counter is the count of hypotheses still above the
+elimination floor, and every figure quoted above was measured on the 37-item
+evaluation bank in `src/bugs/bank.ts`, which has not been edited since the
+numbers were taken.
