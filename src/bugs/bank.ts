@@ -100,7 +100,3 @@ export const BANK: readonly Item[] = [
 export const BANK_BY_ID: ReadonlyMap<string, Item> = new Map(
   BANK.map((i) => [i.id, i]),
 );
-
-export function bankForBand(band: Band): readonly Item[] {
-  return BANK.filter((i) => i.band === band);
-}

@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { BUGS } from "../bugs/library.ts";
-import { mulberry32 } from "../engine/session.ts";
+import { mulberry32 } from "../rng.ts";
 import {
   beginSession,
   clearLearner,
   createLearner,
   hasSeenGuide,
   markGuideSeen,
-  currentBand,
   getRecord,
   loadLearner,
   progress,
@@ -21,13 +20,13 @@ import {
 import { isMuted, setMuted } from "./audio.ts";
 import { Sprocket } from "./components/Bot.tsx";
 import { Peek, peekEnabled } from "./components/Peek.tsx";
-import { buildWarmup, type Warmup as WarmupData } from "./game/warmup.ts";
+import { buildWarmup, type RetestOutcome, type Warmup as WarmupData } from "./game/warmup.ts";
 import { Bay } from "./screens/Bay.tsx";
 import { Case } from "./screens/Case.tsx";
 import { Guide } from "./screens/Guide.tsx";
 import { Later } from "./screens/Later.tsx";
 import { Log } from "./screens/Log.tsx";
-import { Outcome, type RetestOutcome } from "./screens/Outcome.tsx";
+import { Outcome } from "./screens/Outcome.tsx";
 import { Warmup } from "./screens/Warmup.tsx";
 
 const TOTAL = BUGS.length;
@@ -105,7 +104,7 @@ export function App() {
         </div>
         <div className="tally">
           {/*
-            Sound is on by default. Three short cues that only ever mark
+            Sound is on by default. Four short cues that only ever mark
             something the repair log already recorded are not the kind of noise
             a page should need permission for, and a mute nobody finds is the
             same as no sound at all. The choice is remembered.

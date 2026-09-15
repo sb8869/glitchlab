@@ -14,6 +14,9 @@ export function compareChoices(item: Item): string[] {
   return item.kind === "fracCompare" ? [fracStr(item.a), fracStr(item.b)] : [];
 }
 
+/** Longer than any answer in the game; a leaning-on-a-key guard, not a rule. */
+const MAX_ANSWER_DIGITS = 8;
+
 /**
  * What a child is allowed to type into an answer box: digits, nothing else.
  *
@@ -23,8 +26,6 @@ export function compareChoices(item: Item): string[] {
  * entered as two separate boxes and a comparison is a button), so anything
  * else is a typo the child should never be allowed to submit and puzzle over.
  */
-const MAX_ANSWER_DIGITS = 8;
-
 export function digitsOnly(raw: string): string {
   return raw.replace(/\D/g, "").slice(0, MAX_ANSWER_DIGITS);
 }

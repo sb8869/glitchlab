@@ -236,10 +236,6 @@ export function progress(state: LearnerState): {
 
 /* ------------------------------------------------------------ band ladder */
 
-export function bandOfBug(bugId: string): Band {
-  return BUGS.find((b) => b.id === bugId)?.band ?? "place_value";
-}
-
 /**
  * Has this robot been found AND drilled, at any point?
  *
@@ -248,7 +244,7 @@ export function bandOfBug(bugId: string): Band {
  * value would re-lock addition underneath a child already working there.
  * `retestsFailed` only ever grows, so once true this stays true.
  */
-export function hasBeenDrilled(state: LearnerState, bugId: string): boolean {
+function hasBeenDrilled(state: LearnerState, bugId: string): boolean {
   const r = getRecord(state, bugId);
   return r.state === "probation" || r.state === "repaired" || r.retestsFailed > 0;
 }
@@ -258,7 +254,7 @@ export function hasBeenDrilled(state: LearnerState, bugId: string): boolean {
  * some still have not been. Reading `drilledInSession` rather than
  * `probationSince` keeps this monotonic across a crack.
  */
-export function bandDrilledInSession(state: LearnerState, band: Band): number | null {
+function bandDrilledInSession(state: LearnerState, band: Band): number | null {
   const ids = BUGS.filter((b) => b.band === band).map((b) => b.id);
   let latest = 0;
   for (const id of ids) {
@@ -299,7 +295,6 @@ export function isBandOpen(state: LearnerState, band: Band): boolean {
   return true;
 }
 
-/** True when this rung is one good night's sleep away. Only the copy cares. */
 /**
  * The bands that opened THIS session — open now, and locked one session ago.
  *
@@ -317,6 +312,7 @@ export function bandsOpenedThisSession(state: LearnerState): Band[] {
   return BAND_ORDER.filter((b) => isBandOpen(state, b) && !isBandOpen(yesterday, b));
 }
 
+/** True when this rung is one good night's sleep away. Only the copy cares. */
 export function bandOpensNextSession(state: LearnerState, band: Band): boolean {
   if (isBandOpen(state, band)) return false;
   for (const earlier of BAND_ORDER) {

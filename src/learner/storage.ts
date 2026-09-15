@@ -13,6 +13,7 @@ import { STATE_VERSION, type LearnerState, type RepairRecord } from "./types.ts"
 
 export const STORAGE_KEY = "glitchlab.learner.v1";
 
+/** In-memory fallback so the game still works with storage unavailable. */
 export function memoryStorage(): StorageLike {
   const map = new Map<string, string>();
   return {
@@ -38,7 +39,7 @@ function defaultStorage(): StorageLike | null {
  * version and a migration story, and "has read the instructions" is neither
  * mastery nor worth versioning.
  */
-export const GUIDE_KEY = "glitchlab.seen-guide.v1";
+const GUIDE_KEY = "glitchlab.seen-guide.v1";
 
 export function hasSeenGuide(storage: StorageLike | null = defaultStorage()): boolean {
   try {
@@ -69,7 +70,7 @@ export function markGuideSeen(storage: StorageLike | null = defaultStorage()): v
  * Deliberately not part of the learner: the repair log records what the child
  * did, and whether a party has already been thrown is not that.
  */
-export const CHEERED_KEY = "glitchlab.cheered.v1";
+const CHEERED_KEY = "glitchlab.cheered.v1";
 
 export function hasCheered(storage: StorageLike | null = defaultStorage()): boolean {
   try {
@@ -94,7 +95,6 @@ export type StorageLike = {
   removeItem(key: string): void;
 };
 
-/** In-memory fallback so the game still works with storage unavailable. */
 /**
  * Bring a stored state up to date with the current bug library, so adding a
  * bug later does not strand a returning child with a state that is missing it.

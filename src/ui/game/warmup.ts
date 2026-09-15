@@ -47,6 +47,22 @@ export type WarmupSlot = {
   retestFor: string | null;
 };
 
+/**
+ * What a finished warm-up decided about one retest.
+ *
+ * `correct` is the child's FIRST answer and there is deliberately no second
+ * flag beside it. A warm-up does not advance on a wrong answer — it shows the
+ * working and asks again — so "reached it after being shown how" and "got it
+ * wrong first" are the same event, and a field for the second would be the
+ * first one spelled backwards. Only the first answer is ever scored.
+ */
+export type RetestOutcome = {
+  bugId: string;
+  correct: boolean;
+  /** The problem they actually answered, not a stand-in for it. */
+  problem: string;
+};
+
 export type Warmup = {
   slots: WarmupSlot[];
   /**
@@ -60,7 +76,7 @@ export type Warmup = {
 
 export const WARMUP_SIZE = 4;
 /** No band and kind ever appears alone: the odd one out would be the probe. */
-export const WARMUP_PAIR = 2;
+const WARMUP_PAIR = 2;
 
 export function buildWarmup(
   learner: LearnerState,

@@ -1,14 +1,13 @@
 /**
- * Three sounds.
+ * Four sounds.
  *
  * Synthesized from oscillators and a noise buffer rather than loaded from
- * files: nothing in this app is fetched, and three cues are not worth a
- * network request or a licence. The whole module is inert if the browser has
+ * files: nothing in this app is fetched, and four cues are not worth a
+ * network request or a license. The whole module is inert if the browser has
  * no Web Audio, which is why every entry point tolerates a null context
  * instead of guarding at the call sites.
  *
- * There are exactly four, and each marks a thing that already happened in the
- * repair log — a suspect ruled out, a case closed, a robot repaired, and the
+ * Each marks a thing that already happened in the repair log — a suspect ruled out, a case closed, a robot repaired, and the
  * bench finally empty. None of them fires on a correct answer, for the same
  * reason nothing else in this game rewards one: the diagnosis is fed by honest
  * wrong answers, and a child who learns that being right makes a happy noise

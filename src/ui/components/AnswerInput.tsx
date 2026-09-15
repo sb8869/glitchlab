@@ -7,9 +7,18 @@ export {
   answerReady,
   answerStatement,
   answerTrayHead,
-  compareChoices,
-  digitsOnly,
 } from "./answer.ts";
+
+/** A fraction drawn as one glyph: numerator over a bar over denominator. */
+function FracGlyph({ f }: { f: Frac }) {
+  return (
+    <span className="fracglyph">
+      <span className="fg-n">{f.n}</span>
+      <span className="fg-bar" />
+      <span className="fg-d">{f.d}</span>
+    </span>
+  );
+}
 
 /**
  * The answer box, shaped by the item.
@@ -26,17 +35,6 @@ export {
  * The value handed up is always the same flat answer string the engine
  * compares against, so nothing downstream has to know which shape was used.
  */
-
-export function FracGlyph({ f }: { f: Frac }) {
-  return (
-    <span className="fracglyph">
-      <span className="fg-n">{f.n}</span>
-      <span className="fg-bar" />
-      <span className="fg-d">{f.d}</span>
-    </span>
-  );
-}
-
 export function AnswerInput({
   item,
   value,

@@ -9,8 +9,8 @@
  */
 
 import { BANK } from "../bugs/bank.ts";
-import { BUGS, bugById, predict } from "../bugs/library.ts";
-import { correct } from "../bugs/procedures.ts";
+import { ambiguity } from "../bugs/generate.ts";
+import { bugById } from "../bugs/library.ts";
 import type { Item } from "../bugs/types.ts";
 
 /** Items on which this bug is live, i.e. where it actually discriminates. */
@@ -39,13 +39,8 @@ export function bestRetestItem(
   const candidates = discriminatingItems(bugId, bank).filter((i) => !exclude.has(i.id));
   if (candidates.length === 0) return null;
 
-  const ambiguity = (item: Item): number => {
-    const mine = predict(bugId, item);
-    return BUGS.filter((b) => b.id !== bugId && predict(b.id, item) === mine).length;
-  };
-
   return [...candidates].sort(
-    (a, b) => ambiguity(a) - ambiguity(b) || a.id.localeCompare(b.id),
+    (a, b) => ambiguity(bugId, a) - ambiguity(bugId, b) || a.id.localeCompare(b.id),
   )[0]!;
 }
 
@@ -81,9 +76,4 @@ export function interleave<T>(
     }
   }
   return out;
-}
-
-/** Convenience for the UI: is this response a pass for the item shown? */
-export function isCorrectResponse(item: Item, response: string): boolean {
-  return response === correct(item);
 }

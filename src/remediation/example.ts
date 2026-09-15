@@ -52,8 +52,3 @@ export function practiceFor(bugId: string, exclude: string[] = []): Counterexamp
   const item = practiceItemFor(bugId, exclude);
   return item ? toCounterexample(bugId, item) : null;
 }
-
-/** Every number the generated prose is allowed to mention, for the validator. */
-export function knownNumbers(ex: Counterexample): string[] {
-  return [ex.robotAnswer, ex.correctAnswer];
-}

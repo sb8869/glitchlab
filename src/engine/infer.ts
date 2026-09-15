@@ -94,7 +94,7 @@ export function likelihood(
   return cfg.eps / distinctCount;
 }
 
-export function normalize(raw: Record<HypothesisId, number>): Posterior {
+function normalize(raw: Record<HypothesisId, number>): Posterior {
   const total = Object.values(raw).reduce((s, v) => s + v, 0);
   if (total <= 0) {
     const keys = Object.keys(raw);

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "K-4 math game that diagnoses which broken procedure a child is running.",
+  "description": "K-5 math game that diagnoses which broken procedure a child is running.",
   "engines": {
     "node": ">=22"
   },

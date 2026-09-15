@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-import { BUGS } from "../../bugs/library.ts";
-import { BAND_ORDER } from "../../bugs/types.ts";
+import { BUGS, bugById } from "../../bugs/library.ts";
+import { BAND_ORDER, type Band } from "../../bugs/types.ts";
 import {
   bandBelow,
   bandOpensNextSession,
@@ -16,18 +16,19 @@ import { play } from "../audio.ts";
 import { SKINS } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
 
-const bandOf = (bugId: string) => BUGS.find((b) => b.id === bugId)!.band;
+const bandOf = (bugId: string) => bugById(bugId).band;
 
 /**
  * The burst for an empty bench, computed once and deterministically.
  *
  * Not random: a celebration that looks different on every render is a nuisance
  * to verify and nobody sees it twice anyway. Each piece carries its landing
- * point, spin and colour as custom properties, so there are no generated class
+ * point, spin and color as custom properties, so there are no generated class
  * names for the stylesheet to have to know about.
  */
-const CONFETTI = Array.from({ length: 52 }, (_, i) => {
-  const angle = (i / 52) * Math.PI * 2;
+const CONFETTI_PIECES = 52;
+const CONFETTI = Array.from({ length: CONFETTI_PIECES }, (_, i) => {
+  const angle = (i / CONFETTI_PIECES) * Math.PI * 2;
   const reach = 200 + (i % 5) * 95;
   return {
     x: Math.round(Math.cos(angle) * reach),
@@ -38,7 +39,7 @@ const CONFETTI = Array.from({ length: 52 }, (_, i) => {
   };
 });
 
-const BAND_NAME: Record<string, string> = {
+const BAND_NAME: Record<Band, string> = {
   place_value: "place value",
   add_regroup: "addition",
   sub_regroup: "subtraction",
@@ -46,9 +47,10 @@ const BAND_NAME: Record<string, string> = {
 };
 
 /**
- * The bench. Three shelves, and the shelf a robot sits on is the whole story:
- * glitching robots keep their tell, robots waiting on a retest have lost the
- * tell but are not signed off, and repaired robots are plain and checked.
+ * The bench. Four shelves, and the shelf a robot sits on is the whole story:
+ * glitching robots keep their tell, robots on rungs not yet open are dimmed
+ * behind a dashed edge, robots waiting on a retest have lost the tell but are
+ * not signed off, and repaired robots are plain and checked.
  */
 export function Bay({
   learner,
@@ -110,12 +112,6 @@ export function Bay({
    */
   const nothingToOpen = glitching.length === 0 && !clear;
   /*
-   * Name the rung they are actually on, which is the one below the LOWEST
-   * locked band — not below whichever locked robot happens to come first in
-   * the library, which is a subtraction robot and would send them to the
-   * wrong rung.
-   */
-  /*
    * A rung that opened while the child was away. This is the only milestone
    * between the first robot and the last, and it used to be the line "these
    * open next time you come in" — read yesterday, on a different screen.
@@ -126,6 +122,12 @@ export function Bay({
   );
   const openedName = opened.length > 0 ? BAND_NAME[opened[opened.length - 1]!] : null;
 
+  /*
+   * Name the rung they are actually on, which is the one below the LOWEST
+   * locked band — not below whichever locked robot happens to come first in
+   * the library, which is a subtraction robot and would send them to the
+   * wrong rung.
+   */
   const lockedBands = BAND_ORDER.filter((b) => locked.some((id) => bandOf(id) === b));
   const nextBand = lockedBands[0] ?? null;
   const nextRung = nextBand ? bandBelow(nextBand) : null;
@@ -339,7 +341,7 @@ function Shelf({
       <div className="shelf-row">
         {ids.map((id, i) => {
           const skin = SKINS[id]!;
-          const bug = BUGS.find((b) => b.id === id)!;
+          const bug = bugById(id);
           const justOpened = fresh?.has(id) ?? false;
           return (
             <button

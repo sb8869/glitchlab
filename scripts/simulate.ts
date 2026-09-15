@@ -23,7 +23,8 @@ import { BANK } from "../src/bugs/bank.ts";
 import { predict } from "../src/bugs/library.ts";
 import type { Answer, Item } from "../src/bugs/types.ts";
 import { CORRECT, DEFAULT_CONFIG, hypothesisSpace } from "../src/engine/infer.ts";
-import { mulberry32, randomSelector, runSession, infoGainSelector } from "../src/engine/session.ts";
+import { mulberry32 } from "../src/rng.ts";
+import { randomSelector, runSession, infoGainSelector } from "../src/engine/session.ts";
 
 const N_STUDENTS = 500;
 const SLIP_RATE = 0.1;

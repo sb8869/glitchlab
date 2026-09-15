@@ -13,7 +13,8 @@ import {
   predictionsFor,
   update,
 } from "./infer.ts";
-import { infoGainSelector, createSession, runSession, mulberry32, randomSelector } from "./session.ts";
+import { mulberry32 } from "../rng.ts";
+import { infoGainSelector, createSession, runSession, randomSelector } from "./session.ts";
 
 const item = (id: string) => {
   const it = BANK_BY_ID.get(id);

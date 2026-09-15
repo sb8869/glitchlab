@@ -1,7 +1,16 @@
 /**
- * The session driver. Stateless by construction: every function takes the
- * learner state in and returns a new one, so the same code runs the UI, the
- * tests and the 500-student simulation with no branching.
+ * The session driver: the reference loop over the inference in `infer.ts`.
+ *
+ * Stateless by construction — every function takes the state in and returns a
+ * new one — so the tests and the 500-student simulation drive it without any
+ * branching for which one is asking. This is where the measured numbers come
+ * from: `scripts/simulate.ts` runs exactly this loop.
+ *
+ * The game does not run this loop. `src/ui/game/session.ts` keeps its own
+ * state (the robot's bug is fixed and known to the app, the child chooses the
+ * item instead of the selector, and the parameters differ because a robot
+ * never slips) and calls the SAME `infer.ts` underneath. Sharing the belief
+ * update is the point; sharing a loop the game does not want is not.
  */
 
 import type { Answer, HypothesisId, Item } from "../bugs/types.ts";
@@ -54,18 +63,6 @@ export type Diagnosis = {
   posterior: Posterior;
   trace: readonly Step[];
 };
-
-/** Deterministic RNG so every simulation run is reproducible. */
-export function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 export function createSession(
   bank: readonly Item[],
@@ -176,8 +173,9 @@ export function diagnose(
 }
 
 /**
- * Run a whole session against a responder. The UI calls nextItem /
- * recordResponse a step at a time; tests and the simulator use this.
+ * Run a whole session against a responder. The step functions above exist so a
+ * caller can drive it one question at a time; the tests and the simulator take
+ * this shortcut.
  */
 export function runSession(
   bank: readonly Item[],

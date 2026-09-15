@@ -106,7 +106,7 @@ function correctCells(item: Extract<Item, { kind: "arith" }>): {
  * A trace of one method's working. `against` is the other method's answer, so
  * the columns where the two part company can be marked.
  */
-export function traceArith(
+function traceArith(
   item: Item,
   answer: string,
   against: string,

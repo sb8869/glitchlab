@@ -1,13 +1,16 @@
 /**
- * Deterministic remediation — the only remediation this app has.
+ * The remediation for a bug: what the child is told, and what a parent reads.
  *
- * It is written from the bug's own description and the computed
- * counterexample, so it is always available, always correct, offline, and
- * costs nothing.
+ * There is one source and it is this app. The sentences are assembled from the
+ * bug's own description and the counterexample the engine computed, so they
+ * are always available, always correct, offline, and cost nothing. Nothing
+ * here calls out to a service, and nothing here can say a thing about
+ * arithmetic that the engine has not already computed.
  *
- * It is deliberately held to the validator anyway. Text nobody checks is just
- * an unvalidated string with a nicer name, and "we wrote it ourselves" is not
- * a proof that the arithmetic in it is right.
+ * Every sentence is held to `validate.ts` anyway, for all thirteen bugs, in
+ * the test suite. Text nobody checks is just an unvalidated string with a
+ * nicer name, and "we wrote it ourselves" is not a proof that the arithmetic
+ * in it is right.
  */
 
 import { bugById } from "../bugs/library.ts";
@@ -15,7 +18,7 @@ import { SKINS } from "../ui/assets/palette.ts";
 import { counterexampleFor, practiceFor } from "./example.ts";
 import type { Remediation } from "./types.ts";
 
-export function fallbackFor(bugId: string): Remediation {
+export function remediationFor(bugId: string): Remediation {
   const bug = bugById(bugId);
   const name = SKINS[bugId]?.name ?? "The robot";
   const ex = counterexampleFor(bugId);

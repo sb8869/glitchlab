@@ -117,8 +117,6 @@ button:disabled { cursor: not-allowed; }
   .slots { display: none; }
   .tally-label { font-size: 14px; }
   .panel { padding: 18px 16px; }
-  /* The two workings stack rather than squeeze into unreadable columns. */
-  .ways { grid-template-columns: 1fr; }
   .answer-tray { justify-content: center; }
 }
 
@@ -334,7 +332,7 @@ button:disabled { cursor: not-allowed; }
 .guide-modal { max-width: 900px; width: 100%; margin: auto; }
 
 @media (max-width: 720px) {
-  .steps-3 { grid-template-columns: 1fr; }
+  .steps-3 { grid-template-columns: 1fr; gap: 8px; }
   .guide-title { font-size: 32px; }
   /*
    * The first screen a child ever sees should have its start button on it,
@@ -346,7 +344,6 @@ button:disabled { cursor: not-allowed; }
   .guide-head > .bot svg { width: 62px; height: 62px; }
   .cast { padding: 7px 10px; gap: 0; }
   .cast .bot svg { width: 34px; height: 34px; }
-  .steps-3 { gap: 8px; }
   .steps-3 li { padding: 10px 13px; }
   .steps-3 b { font-size: 16px; }
 }
@@ -490,6 +487,9 @@ button:disabled { cursor: not-allowed; }
   .allclear.cheer .clear-stamp { animation: none; }
 }
 .allclear .log-sub { max-width: 56ch; }
+
+/* Centering a lone button. Three screens were writing this inline. */
+.center { display: flex; justify-content: center; }
 
 /* ---------------------------------------------------------------- chips -- */
 .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
@@ -970,7 +970,8 @@ button:disabled { cursor: not-allowed; }
   border: 2.5px solid var(--ink); border-radius: 14px; padding: 10px 12px 12px;
   background: var(--surface);
 }
-.shelf.dashed { border-style: dashed; background: var(--tint-accent); }
+.shelf.dashed { border-style: dashed; }
+.shelf.warn { background: var(--tint-accent); }
 .shelf.good { background: var(--tint-good); }
 .shelf-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
 .shelf-tag {

@@ -27,8 +27,8 @@ Mathematical Skills* (BUGGY, 1978); VanLehn on repair theory.
 | 1. Bug library (13 executable misconceptions) + problem generation | done, 32 tests |
 | 2. Inference engine (Bayes + information gain) | done, 15 tests |
 | 3. Simulation harness (500 students) | done, result below |
-| 4. Progression and mastery (ladder, probation, delayed retest, storage) | done, 45 tests |
-| 5. Game layer | full loop playable, 13 screens, 34 tests |
+| 4. Progression and mastery (ladder, probation, delayed retest, storage) | done, 35 tests |
+| 5. Game layer (13 screens, character system, stylesheet guard) | full loop playable, 48 tests |
 | 6. Remediation layer | done, 17 tests |
 
 `npm run check` — typecheck plus 147 tests, all green.
@@ -133,7 +133,6 @@ src/learner/    repair log, delayed interleaved mastery, band ladder, storage
 src/remediation/ counterexample, column-by-column trace, the validation gate, copy
 src/ui/assets/  bot skeleton, eye states, glitch tells, palette, composition
 scripts/        collision report, simulation harness, contact sheet, mastery walkthrough
-design/         the Claude Design asset brief
 ```
 
 ### Bugs are executable, not descriptive
@@ -192,7 +191,7 @@ The engine is stateless; learner state is passed in.
 
 ### The asset swap contract
 
-Final art is produced outside the repo (brief in `design/ASSET-BRIEF.md`) and
+Final art is produced outside the repo against a written asset brief and
 dropped in wholesale, so composition depends on structure that an outside tool
 could easily break. `src/ui/assets/assets.test.ts` encodes that structure:
 shared 240x240 coordinate space, no hard-coded colors (every fill resolves
@@ -312,7 +311,7 @@ clipPath reference would bind every robot to the first one's paint.
 The child is a detective and the suspect board is a corkboard. Thick ink
 outlines, hard offset shadows, index cards on pushpins, rubber stamps, twine
 — everything a seven-year-old already knows about finding the culprit.
-Designed in Claude Design against the brief in `design/UI-BRIEF.md`.
+Designed in Claude Design against a written UI brief.
 
 Five things in it are load-bearing rather than decorative.
 
@@ -606,7 +605,9 @@ lit.
 
 **The words are assembled here too, and they are still checked.**
 `src/remediation/validate.ts` extracts every arithmetic assertion from the copy
-and verifies it against what the engine computed. The subtlety is that this
+and verifies it against what the engine computed. The copy is deterministic and
+the thirteen bugs are fixed, so the gate runs over all of it in the test suite:
+a sentence that failed would fail the build rather than reach a child. The subtlety is that this
 copy is *supposed* to quote wrong answers — "Rivet says 71 - 28 is 57" is false
 as arithmetic and true about the robot — so a claim passes when it matches real
 arithmetic **or** when it is exactly what that bug's procedure computes.

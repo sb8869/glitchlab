@@ -1,10 +1,12 @@
 /**
  * The validation gate.
  *
- * Remediation copy is checked against arithmetic the engine already computed
- * before it is ever shown to a child. Copy that fails is discarded and the
- * deterministic fallback is used instead, so nothing unvalidated can reach
- * the screen.
+ * Remediation copy is checked against arithmetic the engine already computed.
+ * The copy is deterministic and the thirteen bugs are fixed, so the gate runs
+ * where it can actually stop something: over every bug, in the test suite
+ * (`remediation.test.ts`). A sentence that failed would fail the build rather
+ * than reach a child, which is stronger than catching it at run time with
+ * nothing better to show instead.
  *
  * The subtlety worth stating: this copy is SUPPOSED to quote wrong answers.
  * "Rivet says 40 take away 27 is 27" is a false arithmetic sentence and a

@@ -53,16 +53,6 @@ export function fracValue(f: Frac): number {
 
 /* ---------------------------------------------------------------- correct */
 
-/** Standard right-to-left column addition with carrying. */
-export function addCorrect(a: number, b: number): Answer {
-  return String(a + b);
-}
-
-/** Standard right-to-left column subtraction with regrouping. */
-export function subCorrect(a: number, b: number): Answer {
-  return String(a - b);
-}
-
 /**
  * The answer a child running the *taught* procedure writes down.
  * For fraction addition that is the least-common-denominator form,
@@ -71,9 +61,7 @@ export function subCorrect(a: number, b: number): Answer {
 export function correct(item: Item): Answer {
   switch (item.kind) {
     case "arith":
-      return item.op === "+"
-        ? addCorrect(item.a, item.b)
-        : subCorrect(item.a, item.b);
+      return String(item.op === "+" ? item.a + item.b : item.a - item.b);
     case "expanded":
       return String(item.parts.reduce((s, p) => s + p, 0));
     case "fracAdd": {
@@ -89,11 +77,7 @@ export function correct(item: Item): Answer {
   }
 }
 
-/**
- * Every answer a well-formed item could plausibly receive, used by the
- * simulator's "child slips and writes something else" branch. Never used
- * in the inference path.
- */
+/** The problem as a child reads it: "40 - 27", "300 + 40 + 2", "1/2 vs 1/3". */
 export function itemLabel(item: Item): string {
   switch (item.kind) {
     case "arith":

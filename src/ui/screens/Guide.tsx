@@ -42,7 +42,7 @@ export function Guide({
   onDone: () => void;
 }) {
   const [showAdult, setShowAdult] = useState(false);
-  const cast = BUGS.slice(0, 13).map((b) => b.id);
+  const cast = BUGS.map((b) => b.id);
 
   const body = (
     <div className="guide">

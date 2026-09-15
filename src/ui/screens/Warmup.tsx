@@ -5,15 +5,7 @@ import { traceFor } from "../../remediation/trace.ts";
 import { AnswerInput, answerReady } from "../components/AnswerInput.tsx";
 import { Bot } from "../components/Bot.tsx";
 import { Working } from "../components/Working.tsx";
-import type { Warmup as WarmupData } from "../game/warmup.ts";
-
-export type WarmupResult = {
-  bugId: string;
-  correct: boolean;
-  problem: string;
-  /** True when they only reached the answer after being shown the working. */
-  needed: boolean;
-};
+import type { RetestOutcome, Warmup as WarmupData } from "../game/warmup.ts";
 
 /**
  * Warm-up problems, one of which may be a delayed retest.
@@ -37,7 +29,7 @@ export function Warmup({
   onDone,
 }: {
   data: WarmupData;
-  onDone: (results: WarmupResult[]) => void;
+  onDone: (results: RetestOutcome[]) => void;
 }) {
   const [index, setIndex] = useState(0);
   const [entry, setEntry] = useState("");
@@ -75,11 +67,10 @@ export function Warmup({
       data.slots
         .map((s, i) => ({ s, answer: firstSoFar[i] ?? "" }))
         .filter(({ s }) => s.retestFor)
-        .map(({ s, answer }, _, __) => ({
+        .map(({ s, answer }) => ({
           bugId: s.retestFor!,
           correct: answer === s.answer,
           problem: itemLabel(s.item),
-          needed: answer !== s.answer,
         })),
     );
   }

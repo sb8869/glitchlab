@@ -312,7 +312,7 @@ export function Case({
         )}
 
         {phase === "meet" && (
-          <div style={{ display: "flex", justifyContent: "center" }}>
+          <div className="center">
             <button className="btn" onClick={() => setPhase("choose")}>Open it up!</button>
           </div>
         )}
@@ -424,7 +424,7 @@ export function Case({
               <span className="chip">{plural(suspectCount(game.posterior), "suspect")} left</span>
               {tied && <span className="chip warn">2 left, tied</span>}
             </div>
-            <div style={{ display: "flex", justifyContent: "center" }}>
+            <div className="center">
               {canAccuse(game) ? (
                 <button className="btn" onClick={() => accuse(leadingSuspect(game).id)}>
                   I know what's wrong!

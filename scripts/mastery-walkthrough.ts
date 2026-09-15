@@ -8,7 +8,8 @@
 import { BANK } from "../src/bugs/bank.ts";
 import { bugById, predict } from "../src/bugs/library.ts";
 import { correct, itemLabel } from "../src/bugs/procedures.ts";
-import { mulberry32, runSession } from "../src/engine/session.ts";
+import { mulberry32 } from "../src/rng.ts";
+import { runSession } from "../src/engine/session.ts";
 import { SKINS } from "../src/ui/assets/palette.ts";
 import {
   STREAK_TO_PROBATION,

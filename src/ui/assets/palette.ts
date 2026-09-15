@@ -9,8 +9,6 @@
  * so the cast can never silently fall out of sync with the engine.
  */
 
-import { BUGS } from "../../bugs/library.ts";
-
 /** Shared across every character, so a fault always reads the same way. */
 export const SHARED = {
   outline: "#14343f",
@@ -109,5 +107,3 @@ export function cssVarsFor(bugId: string): Record<string, string> {
     "--bot-glitch": SHARED.glitch,
   };
 }
-
-export const ALL_BUG_IDS: readonly string[] = BUGS.map((b) => b.id);

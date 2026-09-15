@@ -337,7 +337,7 @@ function register(bug: Bug): Bug {
 
 export const BUGS: readonly Bug[] = RAW.map(register);
 
-export const BUGS_BY_ID: ReadonlyMap<string, Bug> = new Map(
+const BUGS_BY_ID: ReadonlyMap<string, Bug> = new Map(
   BUGS.map((b) => [b.id, b]),
 );
 

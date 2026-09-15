@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { BUGS } from "../../bugs/library.ts";
-import { mulberry32 } from "../../engine/session.ts";
+import { mulberry32 } from "../../rng.ts";
 import {
   RETESTS_PER_WARMUP,
   STREAK_TO_PROBATION,

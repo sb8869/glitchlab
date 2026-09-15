@@ -16,7 +16,7 @@ import { generatePool } from "../../bugs/generate.ts";
 import { BUGS, predict } from "../../bugs/library.ts";
 import { correct } from "../../bugs/procedures.ts";
 import type { Band, HypothesisId, Item } from "../../bugs/types.ts";
-import { mulberry32 } from "../../engine/session.ts";
+import { mulberry32 } from "../../rng.ts";
 import {
   CORRECT,
   DEFAULT_CONFIG,
@@ -40,7 +40,7 @@ import {
  * announcing that the most likely explanation was "nothing is wrong" — true to
  * the default prior and useless to a child looking at a cracked robot.
  */
-export const ROBOT_CONFIG: EngineConfig = {
+const ROBOT_CONFIG: EngineConfig = {
   ...DEFAULT_CONFIG,
   eps: 0.02,
   priorCorrect: 0.06,
@@ -89,16 +89,13 @@ export function liveSuspects(posterior: Posterior): Array<{ id: string; p: numbe
 }
 
 /**
- * Tests are offered from the band being played, so a first grader working on
- * place value is never handed a fraction problem. The suspect board, though,
- * starts as the WHOLE library: the robot could have any bug at all, and a
- * single wrong answer rules out most of them at once. That first collapse is
- * the most legible thing the engine does.
+ * The board opens as the WHOLE library, not as the band being played.
+ *
+ * Tests are drawn from the child's band, so a first grader working on place
+ * value is never handed a fraction problem. The suspects are not: the robot
+ * could have any bug at all, and a single wrong answer rules out most of them
+ * at once. That first collapse is the most legible thing the engine does.
  */
-export function bandBank(band: Band): Item[] {
-  return BANK.filter((i) => i.band === band);
-}
-
 export function startGame(patientBugId: string, seed = Math.floor(Math.random() * 2 ** 31)): GameState {
   const bug = BUGS.find((b) => b.id === patientBugId);
   const band: Band = bug?.band ?? "sub_regroup";
@@ -226,10 +223,6 @@ export function leadingSuspect(state: GameState): { id: string; p: number } {
 /** The child may name the bug once one suspect is clearly ahead. */
 export function canAccuse(state: GameState): boolean {
   return leadingSuspect(state).p >= ROBOT_CONFIG.threshold;
-}
-
-export function isSolved(state: GameState): boolean {
-  return canAccuse(state) && leadingSuspect(state).id === state.patientBugId;
 }
 
 export { CORRECT };

@@ -12,8 +12,8 @@ import { play } from "../audio.ts";
 const TILT = [-1.2, 1, 0.8, -0.9, 1.3, -1.1, 0.6, -1.4, 1.1, -0.7, 0.9, -1.2, 1.2, -0.8];
 
 /**
- * Below this many suspects the board stops hiding the sentences. Reading
- * three is not a reading test; reading thirteen is.
+ * At this many suspects or fewer, the board stops hiding the sentences.
+ * Reading three is not a reading test; reading thirteen is.
  */
 const NAME_THEM_AT = 3;
 
@@ -333,9 +333,7 @@ export function SuspectBoard({
 
   useEffect(() => {
     if (hold) return;
-    const next = liveSuspects(posterior)
-      .filter((sp) => sp.p >= RULED_OUT)
-      .map((sp) => sp.id);
+    const next = live.map((sp) => sp.id);
     const alive = new Set(next);
     const departing = slots.filter((id) => !alive.has(id));
     // A suspect can only ever leave. Anything arriving means a different case
@@ -409,9 +407,9 @@ export function SuspectBoard({
       setLeaving(new Set());
     }, settle);
     return () => clearTimeout(t);
-    // A new posterior, or the release of the hold, starts a sweep; `slots` is
-    // read, never watched.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // A new posterior, or the release of the hold, starts a sweep. `slots` and
+    // `live` are read inside, never watched: both are derived from `posterior`,
+    // and watching `slots` would restart the sweep it just scheduled.
   }, [posterior, hold]);
 
   /*
@@ -437,8 +435,8 @@ export function SuspectBoard({
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-    // `display` is the value to travel FROM, read once when `revealed` moves.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // `display` is the value to travel FROM, read once when `revealed` moves,
+    // so it is deliberately not a dependency.
   }, [revealed]);
 
   const sweeping = leaving.size > 0;
@@ -453,8 +451,7 @@ export function SuspectBoard({
    * cards — the thirteen still being stamped included — put their sentences
    * back on, and the board turned into the wall of prose it exists to avoid.
    */
-  const shown = revealed;
-  const settled = shown === 1;
+  const settled = revealed === 1;
   const named = slots.length <= NAME_THEM_AT;
   /*
    * Ruled out AND off the board. Keyed on what is pinned up rather than on
@@ -478,9 +475,8 @@ export function SuspectBoard({
       <div className="board-head">
         <span className="board-tag">SUSPECT BOARD</span>
         <span className="board-count">
-          {/* Keyed on the value so the punch replays every time it drops. */}
           {/* Keyed on the target so the punch fires once; the digits roll. */}
-          <b key={shown} className="tick">
+          <b key={revealed} className="tick">
             {display}
           </b>
           <span>{settled ? "found it" : "still possible"}</span>

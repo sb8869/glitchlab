@@ -17,8 +17,9 @@
  * a second arm checks the result is not an artifact of that particular bank.
  */
 
+import { mulberry32 } from "../rng.ts";
 import { BUGS, predict } from "./library.ts";
-import { correct, fracValue, gcd, lcm, numDigits } from "./procedures.ts";
+import { fracValue, gcd, lcm, numDigits } from "./procedures.ts";
 import type { Band, Frac, Item } from "./types.ts";
 
 /* ------------------------------------------------------------ classifying */
@@ -209,7 +210,7 @@ export type Pool = { all: Item[]; byRole: Record<Role, Item[]> };
  * hand with no control or no tie-producer would quietly lose a mechanic.
  */
 export function generatePool(band: Band, seed: number, size = 48): Pool {
-  const rng = mulberry(seed);
+  const rng = mulberry32(seed);
   const seen = new Set<string>();
   const byRole: Record<Role, Item[]> = { control: [], tie: [], solve: [] };
   const all: Item[] = [];
@@ -230,7 +231,7 @@ export function generatePool(band: Band, seed: number, size = 48): Pool {
 export function generateForBug(bugId: string, seed: number, count = 8): Item[] {
   const bug = BUGS.find((b) => b.id === bugId);
   if (!bug) return [];
-  const rng = mulberry(seed);
+  const rng = mulberry32(seed);
   const seen = new Set<string>();
   const hits: Item[] = [];
   for (let tries = 0; tries < 4000 && hits.length < count * 4; tries++) {
@@ -243,25 +244,4 @@ export function generateForBug(bugId: string, seed: number, count = 8): Item[] {
   return hits
     .sort((x, y) => ambiguity(bugId, x) - ambiguity(bugId, y) || x.id.localeCompare(y.id))
     .slice(0, count);
-}
-
-/** Problems a child can just answer: nothing fires, so nothing is being probed. */
-export function generateControls(band: Band, seed: number, count = 6): Item[] {
-  return generatePool(band, seed, 60).byRole.control.slice(0, count);
-}
-
-export function answerOf(item: Item): string {
-  return correct(item);
-}
-
-/* Local copy so bugs/ does not depend on engine/. */
-function mulberry(seed: number): Rng {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }

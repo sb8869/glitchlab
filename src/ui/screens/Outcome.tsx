@@ -4,15 +4,7 @@ import { play } from "../audio.ts";
 import { bugById } from "../../bugs/library.ts";
 import { SKINS } from "../assets/palette.ts";
 import { Bot } from "../components/Bot.tsx";
-
-export type RetestOutcome = {
-  bugId: string;
-  correct: boolean;
-  /** The problem they actually answered, not a stand-in for it. */
-  problem: string;
-  /** They reached the answer, but only after being shown the working. */
-  needed: boolean;
-};
+import type { RetestOutcome } from "../game/warmup.ts";
 
 /**
  * What the delayed retest decided.
@@ -58,9 +50,7 @@ export function Outcome({
                 is sometimes wrong. */}
             {r.correct
               ? "That problem came back days later, mixed into ordinary work, and you held it."
-              : r.needed
-                ? "You got there in the end — but it took a look at the working first."
-                : "That's useful: now we know exactly where to look."}
+              : "You got there in the end — but it took a look at the working first."}
           </div>
         </div>
       </div>
@@ -100,11 +90,7 @@ export function Outcome({
             */}
             <span>
               {r.problem} ·{" "}
-              {r.correct
-                ? "you held it"
-                : r.needed
-                  ? "right in the end, but not on your own"
-                  : "the bug is still hiding in there"}
+              {r.correct ? "you held it" : "right in the end, but not on your own"}
             </span>
           </li>
           <li className={r.correct ? "on" : ""}>
@@ -122,13 +108,12 @@ export function Outcome({
       */}
       {!r.correct && (
         <p className="aside">
-          {r.needed
-            ? "A repair counts when it holds without a nudge. This one nearly did — it goes back on the bench and comes round again."
-            : "Most bugs come back once. It's how we know they're real."}
+          A repair counts when it holds without a nudge. This one nearly did — it goes back
+          on the bench and comes round again.
         </p>
       )}
 
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      <div className="center">
         {/* Back to the bench. What to work on next is the child's call. */}
         <button className="btn" onClick={onContinue}>
           Back to the bench

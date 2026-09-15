@@ -10,7 +10,6 @@ import {
   counterexampleFor,
   exampleItemFor,
   extractClaims,
-  fallbackFor,
   practiceFor,
   remediationFor,
   validateCopy,
@@ -117,12 +116,12 @@ test("claim extraction handles the phrasings a model actually writes", () => {
   }
 });
 
-/* ------------------------------------------------ the shipped fallback --- */
+/* ------------------------------------------------- the shipped copy ----- */
 
 test("the deterministic copy passes the validator it was built to satisfy", () => {
-  // A fallback nobody checks is just an unvalidated string with a nicer name.
+  // Copy nobody checks is just an unvalidated string with a nicer name.
   for (const bug of BUGS) {
-    const r = fallbackFor(bug.id);
+    const r = remediationFor(bug.id);
     const child = validateCopy(r.childExplanation, childOpts(bug.id));
     assert.ok(child.ok, `${bug.id} child copy: ${child.failures.join("; ")}`);
 

@@ -131,7 +131,7 @@ function appliedClasses(): Map<string, Set<string>> {
  */
 const SHARED = new Set([
   "answer-tray", "app", "aside", "bad", "bench", "bench-wrap", "bot", "btn",
-  "bubble", "chip", "chips", "line", "log-sub", "nameplate", "panel",
+  "bubble", "center", "chip", "chips", "line", "log-sub", "nameplate", "panel",
   "parent-note", "patient", "pn-head", "practice", "quiet", "say", "spotlight",
   "stage", "status", "teach", "tray", "tray-head",
 ]);

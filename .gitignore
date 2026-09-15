@@ -9,3 +9,8 @@ out/
 
 # Files delivered into the chat by Claude; not part of the project.
 Claude outputs/
+
+# Hackathon submission bundle and design briefs. Provided through the
+# submission form, not through the repo.
+demo/
+design/

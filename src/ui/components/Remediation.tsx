@@ -11,8 +11,9 @@ import { BANK } from "../../bugs/bank.ts";
 
 /**
  * The screen that teaches, once the bug is known. Every number shown here was
- * computed by the engine, and every sentence around those numbers passed the
- * validation gate. Nothing on this screen leaves the device.
+ * computed by the engine, and every sentence around those numbers is held to
+ * the validation gate in `remediation/validate.ts` — for all thirteen bugs, in
+ * the test suite. Nothing on this screen leaves the device.
  */
 export function Remediation({ bugId }: { bugId: string }) {
   const [showParent, setShowParent] = useState(false);
@@ -28,6 +29,7 @@ export function Remediation({ bugId }: { bugId: string }) {
    */
   const exampleItem = exampleItemFor(bugId) ?? BANK.find((i) => i.id === r.example.itemId) ?? null;
   const practiceItem = practiceItemFor(bugId);
+  const isRight = (value: string) => value.trim() === r.practice?.correctAnswer;
   const traceOf = (answer: string, against: string, annotate: boolean): Trace =>
     exampleItem ? traceFor(exampleItem, answer, against, annotate) : { kind: "plain" };
   const robotTrace = traceOf(r.example.robotAnswer, r.example.correctAnswer, false);
@@ -82,13 +84,13 @@ export function Remediation({ bugId }: { bugId: string }) {
                 setTryAnswer(next);
                 setTried(null);
               }}
-              onSubmit={(value) => setTried(value.trim() === r.practice!.correctAnswer)}
+              onSubmit={(value) => setTried(isRight(value))}
             />
             {practiceItem?.kind !== "fracCompare" && (
               <button
                 className="btn sm"
                 disabled={!answerReady(practiceItem, tryAnswer)}
-                onClick={() => setTried(tryAnswer.trim() === r.practice!.correctAnswer)}
+                onClick={() => setTried(isRight(tryAnswer))}
               >
                 Check
               </button>

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { BANK } from "../bugs/bank.ts";
 import { BUGS, bugById, predict } from "../bugs/library.ts";
 import { correct } from "../bugs/procedures.ts";
-import { mulberry32 } from "../engine/session.ts";
+import { mulberry32 } from "../rng.ts";
 import { bestRetestItem, discriminatingItems, interleave } from "./schedule.ts";
 
 /* ----------------------------------------------------------- item choice */

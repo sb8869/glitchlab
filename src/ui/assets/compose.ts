@@ -40,7 +40,7 @@ export function extractGroup(svg: string, id: string): string {
 }
 
 /** Replace the contents of <g id="ID"> in `svg`, keeping the opening tag intact. */
-export function fillGroup(svg: string, id: string, content: string): string {
+function fillGroup(svg: string, id: string, content: string): string {
   const [start, end] = groupSpan(svg, id);
   return svg.slice(0, start) + content + svg.slice(end);
 }
